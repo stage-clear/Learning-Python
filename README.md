@@ -1,4 +1,4 @@
-# Learning-Python
+# Learning Python
 ```python
 print("Hello, World!")
 ```
@@ -60,6 +60,7 @@ my_boolean = True
 |not|否定|`not True`|
 
 ### 条件文
+if:
 ```python
 home = "Japan"
 if home == "USA":
@@ -72,6 +73,15 @@ if x == 10:
     if y == 11:
         print(x + y)
 ```
+if: else:
+```
+if home == "America"
+  print("Hello, America!")
+else:
+  print("Hello, World!")
+```
+
+if: elif:
 ```python
 home = "火星"
 if home == "America":
@@ -83,6 +93,7 @@ elif home == "Thailand":
 else:
     print("Hello, World")
 ```
+３項演算子
 ```
 x = 10 if a > 0 else 20
 ```
