@@ -107,6 +107,18 @@ result = f(2)
 print(result)
 >> 4
 ```
+オプション引数
+```python
+def f (x = 2):
+    return x ** x
+```
+#### ラムダ関数
+```python
+# lambda 引数: 命令
+lambda x: x % 2 == 0
+
+lambda name: print("Hi!" + name)
+```
 
 ### 組み込み関数
 - https://docs.python.org/ja/3/library/functions.html
