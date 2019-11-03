@@ -423,6 +423,38 @@ for i, new in enumerate(tv):
     new = new.upper()
     tv[i] = new
 ```
+リスト内包表記
+```python
+# [式 for 要素名 in リスト]
+[x*2 for x in [1,2,3,4]]
+>> [2, 4, 6, 8]
+
+[x*x for x in range(5)]
+>> [0, 1, 4, 9, 16]
+
+[[x, x+1, x+2] for x in [1, 2, 3]]
+>> [[1, 2, 3], [2, 3, 4], [3, 4, 5]]
+
+[[0 for x in range(3)] for y in range(4)]
+>> [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]
+
+[[x+y*3 for x in range(3)] for y in range(4)]
+>> [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
+
+data = [[x+y*3 for x in range(3)] for y in range(4)]
+data
+>> [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
+[[x*2 for x in row] for row in data]
+[[0, 2, 4], [6, 8, 10], [12, 14, 16], [18, 20, 22]]
+
+# 式 for 要素名 in リスト if 条件式
+[x for x in [0,1,2,3,4,5] if x%2==0]
+>> [0, 2, 4]
+
+[x*3 for x in range(6) if x%2==0]
+>> [0, 6, 12]
+```
+
 range
 ```python
 for i in range(1, 11):
