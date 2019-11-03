@@ -98,6 +98,24 @@ else:
 x = 10 if a > 0 else 20
 ```
 
+## クラス
+```python
+class Person:
+    def __init__ (self, name):
+        self.name = name
+    
+    def say_hello ():
+        print("Hi!" + self.name)
+```
+
+継承
+```python
+class Staff(Person):
+    def __init__ (self):
+        super().__init__()
+```
+`super()`は親クラスの定義を参照するメソッドです
+
 ### 関数
 ```python
 def f(x):
@@ -469,21 +487,6 @@ print(added)
 white input('y or n') != 'n':
     for i in range(1, 6):
         print(i)
-```
-## クラス
-```python
-class Person:
-    def __init__ (self, name):
-        self.name = name
-    
-    def say_hello ():
-        print("Hi!" + self.name)
-```
-
-継承
-```python
-class Staff(Person):
-    pass
 ```
 
 ## モジュール
