@@ -74,7 +74,7 @@ if x == 10:
         print(x + y)
 ```
 if: else:
-```
+```python
 if home == "America"
   print("Hello, America!")
 else:
@@ -94,7 +94,7 @@ else:
     print("Hello, World")
 ```
 ３項演算子
-```
+```python
 x = 10 if a > 0 else 20
 ```
 
