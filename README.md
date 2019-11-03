@@ -83,6 +83,9 @@ elif home == "Thailand":
 else:
     print("Hello, World")
 ```
+```
+x = 10 if a > 0 else 20
+```
 
 ### 関数
 ```python
