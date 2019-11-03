@@ -238,14 +238,14 @@ del facts["code"]
 
 ## 文字列の操作
 三重クオート
-```
+```python
 """line one
    line two
    line three
 """
 ```
 インデックス
-```
+```python
 author = "Kafka"
 author[0]
 author[1]
@@ -254,30 +254,30 @@ author[3]
 author[-1]
 ```
 文字列の足し算
-```
+```python
 "Cat" + "in" + "hat"
 ```
 文字列の掛け算
-```
+```python
 "Sawyer" * 3
 ```
 大文字小文字変換
-```
+```python
 "We hold these truths...".upper()
 "SO IT GOES.".lower()
 "four score and...".capitalise()
 ```
 書式化
-```
+```python
 name = "ウィリアム・フォークナー"
 "こんにちは、{}".format(name)
 ```
 分割
-```
+```python
 "水たまりを飛び越えたんだ。３メートルもあったんだぜ！".split("。")
 ```
 結合
-```
+```python
 first_three = "abc"
 result = "+".join(first_three)
 result
@@ -290,21 +290,21 @@ one
 >> Thefoxjumpedoverthefence
 ```
 空白除去
-```
+```python
 s = "     The     "
 s = s.strip()
 s
 >> The
 ```
 置換
-```
+```python
 equ = "All animals are equal."
 equ = equ.replace("a", "@")
 print(equ)
 >> All @nim@ls @re equ@l.
 ```
 文字を探す
-```
+```python
 "animals".index("m")
 >> 3
 
@@ -317,16 +317,16 @@ except:
     print("Not found.")
 ```
 包含
-```
+```python
 "Cat" in "Cat in the hat."
 >> True
 ```
 エスケープ文字
-```
+```python
 "彼女は\"そうだね\"と言った"
 ```
 スライス
-```
+```python
 fict = ["トルストイ", "カミュ", "オーウェル", "ハクスリー", "オースティン"]
 fict[0:3]
 >>["トルストイ", "カミュ", "オーウェル"]
@@ -336,25 +336,25 @@ fict[:] # 元のコピーを作る
 ```
 
 ## ループ
-```
+```python
 name = "Ted"
 for character in name:
     print(character)
 ```
 
-```
+```python
 shows = ["GOT", "Narcos", "Vice"]
 for show in shows:
     print(show)
 ```
 
-```
+```python
 coms = ("A. Development", "Friends", "Always Sunny")
 for show in coms:
     print(show)
 ```
 
-```
+```python
 people = {"G. Bluth II": "A. Development", 
           "Barney": "HIMYM",
           "Dennis": "Always Sunny"}
@@ -363,7 +363,7 @@ for character in people:
     print(character)
 ```
 
-```
+```python
 tv = ["GOT", "Narcos", "Vice"]
 for i, new in enumerate(tv):
     new = tv[i]
@@ -371,7 +371,7 @@ for i, new in enumerate(tv):
     tv[i] = new
 ```
 range
-```
+```python
 for i in range(1, 11):
     print(i)
 >> 1
@@ -380,7 +380,7 @@ for i in range(1, 11):
 >> 10
 ```
 while
-```
+```python
 x = 10
 while x > 0:
     print('{}'.format(x))
@@ -388,19 +388,19 @@ while x > 0:
 print("Happy New Year!")
 ```
 
-```
+```python
 while True:
     print("Hello, World!")
 ```
 break
-```
+```python
 for i in range(0, 100):
     print(i)
     break
 >> 0
 ```
 continue
-```
+```python
 for i in range(1, 6):
     if i == 3:
         continue
@@ -414,7 +414,7 @@ while i <= 5:
     i += 1
 ```
 入れ子のループ
-```
+```python
 # Sample1
 for i in range(1, 3):
     print(i)
@@ -446,24 +446,24 @@ white input('y or n') != 'n':
 
 ## ファイル
 ファイルに書き出す
-```
+```python
 import os
 os.path.join("Users", "bob", "st.txt")
 >> Uses/bob/st.txt
 ```
 
-```
+```python
 st = open("st.txt", "w", "encoding="utf-8")
 st.write("Hi from Python!")
 st.close()
 ```
 ファイルを自動的に閉じる
-```
+```python
 with open("st.txt", "w") as f:
     f.write("Hi from Python!")
 ```
 ファイルから読み込む
-```
+```python
 with open("st.txt", "r", encoding="utf-8") as f:
     print(f.read())
 ```
