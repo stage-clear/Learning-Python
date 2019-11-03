@@ -470,6 +470,21 @@ white input('y or n') != 'n':
     for i in range(1, 6):
         print(i)
 ```
+## クラス
+```python
+class Person:
+    def __init__ (self, name):
+        self.name = name
+    
+    def say_hello ():
+        print("Hi!" + self.name)
+```
+
+継承
+```python
+class Staff(Person):
+    pass
+```
 
 ## モジュール
 - math
