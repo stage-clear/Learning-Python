@@ -552,3 +552,9 @@ with open("st.txt", "w") as f:
 with open("st.txt", "r", encoding="utf-8") as f:
     print(f.read())
 ```
+
+## 参考
+- [Python 3公式ドキュメント](https://docs.python.org/ja/3/)
+- [Automate the Boring Stuff with Python](https://automatetheboringstuff.com/)
+- [Dive Into Python 3 日本語版](http://diveintopython3-ja.rdy.jp/)
+- [Phthon ヒッチハイク・ガイド](https://python-guideja.readthedocs.io/ja/latest/)
