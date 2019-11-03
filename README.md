@@ -168,7 +168,7 @@ def add (x, y):
 ```
 
 ### リスト
-```
+```python
 fruit = list()
 fruit = []
 fruit = ["Apple", "Orange", "Pear"]
