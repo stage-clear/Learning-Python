@@ -103,7 +103,7 @@ x = 10 if a > 0 else 20
 class Person:
     def __init__ (self, name):
         self.name = name
-    
+
     def say_hello ():
         print("Hi!" + self.name)
 ```
@@ -408,7 +408,7 @@ for show in coms:
 ```
 
 ```python
-people = {"G. Bluth II": "A. Development", 
+people = {"G. Bluth II": "A. Development",
           "Barney": "HIMYM",
           "Dennis": "Always Sunny"}
 
