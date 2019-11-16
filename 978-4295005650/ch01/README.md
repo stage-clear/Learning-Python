@@ -117,6 +117,8 @@ print(df.iloc[[0, 99, 999]])
 
 ### 1.3.3 組み合わせて絞り込む
 #### 1.3.3.1 複数行の抽出
+Python のスライス構文は `:` を使う。コロンだけを指定すると、その属性は「すべて」を意味する。
+`df.loc[:, [columns]]`
 
 ```python
 # loc で列を絞り込む
@@ -130,4 +132,43 @@ print(subset.head())
 # -1 は最後の列を選択する
 subset = df.iloc[:, [2, 4, -1]]
 print(subset.head())
+
+# loc で列を絞り込む
+# ただし、整数値を指定しているのでエラーになる
+subset = df.loc[:, [2, 4, -1]]
+print(subset.head())
+
+# iloc で列を絞り込む
+# ただしインデックス名を指定しているのでエラーになる
+subset = df.iloc[:, ['year', 'pop']]
+print(subset.head())
 ```
+
+#### 1.3.3.2 範囲による複数列の抽出
+```python
+# 0から4までの整数を含む範囲を作成
+small_range = list(range(5))
+print(small_range)
+# > [0,1,2,3,4]
+
+# その範囲で DataFrame オブジェクトを絞り込む
+subset = df.iloc[:, small_range]
+print(subset.head())
+
+# 3から5までの整数を含む範囲を作成
+small_range = list(range(3, 6))
+print(subset.head())
+# > [3,4,5]
+subset = df.iloc[:, small_range]
+print(subset.head())
+
+# 0 から 5に至る、1つおきの整数を含む範囲を作成
+small_range = list(range(0, 6, 2))
+subset = df.iloc[:, small_range]
+print(subset.head())
+```
+
+#### 1.3.3.3 整数列のスライシング
+
+
+
