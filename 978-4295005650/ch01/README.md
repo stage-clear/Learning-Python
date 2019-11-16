@@ -170,5 +170,21 @@ print(subset.head())
 
 #### 1.3.3.3 整数列のスライシング
 
+```python
+small_range = list(range(3))
+subset = df.iloc[:, small_range]
+print(subset.head())
 
+# 最初の３つの列をスライスする
+subset = df.iloc[:, :3]
+print(subset.head())
+
+small_range = list(range(3, 6))
+subset = df.iloc[:, small_range]
+print(subset.head())
+
+# 3から5までを含む列をスライス
+subset = df.iloc[:, 3:6]
+
+```
 
