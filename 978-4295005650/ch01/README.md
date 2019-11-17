@@ -185,6 +185,81 @@ print(subset.head())
 
 # 3から5までを含む列をスライス
 subset = df.iloc[:, 3:6]
-
 ```
 
+#### 1.3.3.4 列と行の抽出
+```python
+#locを使うとき
+print(df.loc[42, 'country'])
+
+# ilocを使うとき
+print(df.iloc[42, 0])
+
+# これはエラーになるだろう
+print(df.loc[42, 0])
+
+# データから43番目のcountryを取り出す
+print(df.loc[42, 'country'])
+
+# 'country'の代わりにインデックス0を使う (非推奨)
+df.ix[42, 0]
+```
+
+#### 1.3.3.5 複数行、複数列の抽出
+```python
+# 第1行、第100行、第1000行を、
+# 第1列、第4列、第６列から切り出す
+print(df.iloc[[0, 99, 999], [0, 3, 5]])
+
+# インデックスではなく、列名を直接使えば
+# もっとコードが読みやすくなる。ただし、
+# それには、ilocではなくlocを使う必要がある
+print(df.[[0,99,999], ['country', 'lifeExp', 'gdpPercap']])
+
+# locおよびilocの属性では、行の位置指定にスライス構文を使える
+print(df.loc[10:13, ['country', 'lifeExp', 'gdpPercap']])
+```
+
+## 1.4 グループ化と集約
+### 1.4.1 グループごとの平均値
+```python
+# 平均値(mean)
+# 処理のプロセス「分割-適用-結合」（split-apply-combine）
+print(df.groupby('year')['lifeExp'].mean())
+
+grouped_year_df = df.groupby('year')
+grouped_year_df_lifeExp = grouped_year_df['lifeExp']
+mean_lifeExp_by_year = grouped_year_df_lifeExp.mean()
+print(mean_lifeExp_by_year)
+
+# バックスラッシュを使えば、長い１行のコードを複数行に分けることができる
+multi_group_var = df.\
+  groupby(['year', 'continent'])\
+  [['lifeExp', 'gdpPercap']].\
+  mean()
+
+multi_group_var = df.\
+  groupby(['year', 'continent'])\
+  [['lifeExp', 'gdpPercap']].\
+  mean()
+print(multi_group_var)
+
+# この DataFrame オブジェクトを平坦化
+flat = multi_group_var.reset_index()
+print(flat.head())
+```
+
+### 1.4.2 グループごとの度数/頻度
+```python
+# nunique() : 重複を除くユニークな出現回数
+# value_counts() : 重複を含む出現回数
+print(df.groupby('contient')['country'].nunique())
+```
+
+## 1.5 基本的なグラフ
+```python
+import matplotlib.pyplt as plt
+
+global_yearly_life_expectancy.plot()
+plt.show()
+```
