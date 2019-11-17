@@ -6,7 +6,7 @@
 - Seriesオブジェクトはlistと同じく、1次元のコンテナ
 - SeriesはDataFrameの各列を表現するデータ型
 
-```pyhton
+```python
 import pandas as pd
 
 s = pd.Series(['banana', 42])
