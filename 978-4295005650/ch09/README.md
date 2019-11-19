@@ -133,3 +133,87 @@ titanic = sns.load_dataset('titanic')
 
 print(titanic)
 ```
+
+このデータに null または NaN の値がいくつあるかを計算し、各列または各行における完全なケースの比率を求める
+
+```python
+# 1. 欠損値を求める
+# numpy の sum 関数を使う
+import numpy = as np
+
+def count_missing (vec):
+    """ベクトルにある欠損値の数を数える"""
+    # 値が欠損しているかどうかを示す
+    # 真偽値のベクトルをとる
+    null_vec = pd.isnull(vec)
+
+    # null の値は sum に影響を与えない
+    # null_vec に対する sum の計算で欠損値の数がわかる
+    null_count = np.sum(null_vec)
+
+    # ベクトルにある欠損値を返す
+    return null_count
+
+# 2. 欠損率を求める
+def prop_missing (vec):
+    """ベクトルで欠損値が閉める比率"""
+    # 分子（numerator）は欠損値の数
+    # 上で定義したcount_missing関数を使う!
+    num = count_missing(vec)
+    
+    # 分母(denominator)はベクトルにある値の総数
+    # これには欠損値も含まれる
+    dem = vec.size
+    
+    # 欠損値の比率（proportion）を返す
+    return num / dem
+
+def prop_complete (vec):
+    """ベクトルで非欠損値が占める比率"""
+    # すでに書いた prop_missing 関数を利用し、
+    # その値を1から差し引く
+    return 1 - prop_missing(vec)
+```
+
+### 9.4.1 列ごとの演算
+```python
+cmis_col = titanic.apply(count_missing)
+pmis_col = titanic.apply(prop_missing)
+pcom_col = titanic.apply(prop_complete)
+
+print(cmis_col)
+print(pmis_col)
+print(pcom_col)
+```
+
+embark_town の列には欠損値が２つしかない。その２つの行を見れば、これらの値がランダムに欠損したのか、それとも何かあって欠損したのかを調べることができるだろう。
+
+```python
+print(titanic.loc[pd.isnull(titanic.embark_town), :])
+```
+
+### 9.4.2 行ごとの演算
+axis=1
+
+```python
+cmis_row = titanic.apply(count_missing, axis=1)
+pmis_row = titanic.apply(prop_missing, axis=1)
+pcom_row = titanic.apply(prop_complete, axis=1)
+
+print(cmis_row.head())
+print(pmis_row.head())
+print(pcom_row.head())
+
+# データの中に複数の欠損値を持つ行がどのくらいあるか
+print(cmis_row.value_counts())
+
+# これらの値を含む新しい列を作ることもできる
+titanic['num_missing'] = titanic.apply(count_missing, axis=1)
+
+print(titanic.head())
+
+# 複数の欠損値を持つ行を見ることもできる
+print(titanic.loc[titanic.num_missing > 1, :].sample(10))
+```
+
+## 9.5 関数のベクトル化
