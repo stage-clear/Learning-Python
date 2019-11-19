@@ -217,3 +217,115 @@ print(titanic.loc[titanic.num_missing > 1, :].sample(10))
 ```
 
 ## 9.5 関数のベクトル化
+vectorize関数とでコレータを使うと、どんな関数でもベクトル化できる
+
+```python
+df = pd.DataFrame({
+    'a': [10, 20, 30],
+    'b': [20, 30, 40]
+})
+
+print(df)
+```
+
+```pytyon
+def avg_2 (x, y):
+    return (x + y) / 2
+```
+
+> `avg2(df['a'], df['b'])` と書けるようにし、それぞれの結果として `[15, 25, 35]` を得られるようにしたい
+
+```python
+print(avg_2(df['a'], df['b']))
+# このアプローチが使えるのは、関数内部で行われる計算の性質が、もともとベクトル化に適しているからだ
+
+
+import numpy as np
+
+def avg_2_mod (x, y):
+    if (x == 20):
+        return (np.NaN)
+    else:
+        return (x + y) / 2
+
+# エラーになる
+print(avg_2_mod(df['a'], df['b']))
+
+# 期待通りに動作する
+print(avg_2_mod(10, 20))
+print(avg_2_mod(20, 30))
+```
+
+### 9.5.1 Numpy を使ったベクトル化
+https://docs.python.org/ja/3/reference/compound_stmts.html#function-definitions
+
+```python
+# np.vectorize により実際には新しい関数を作る
+avg_2_mod_vec = np.vectorize(avg_2_mod)
+print(avg_2_mod_vec(df['a'], df['b']))
+```
+
+Pythonのデコレータ(decorator)を使うことで、新しい関数を作成せずに、既存の関数を自動的にベクトル化することが可能だ
+
+```python
+# でコレータを使ってベクトル化するには、
+# 関数定義の前に@記号を使う
+@np.vectorize
+def v_avg_2_mod (x, y):
+    """xが20でなければ平均値を計算する。前と同様だが、デコレータでベクトル化する"""
+
+    if (x == 20):
+        return np.NaN
+    else:
+        return (x + y) / 2
+
+# 上記のように書くことで、新しい関数を作ることなく
+# ベクトル化した関数を直接使える
+print(v_avg_2_mod(df['a'], df['b']))
+```
+
+### 9.5.2 numba を使ったベクトル化
+
+```python
+import numba
+
+@numba.vectorize
+def v_avg_2_numba (x, y):
+    # 関数に型情報を追加する必要がある
+    if (int(x) == 20):
+        return np.NaN
+    else:
+        return (x + y) / 2
+
+# numbaはpandasのオブジェクトを認識できない
+print(v_avg_2_numba(df['a'], df['b']))
+
+# このため NumPy 配列表現を渡す必要がある
+print(v_avg_2_numba(df['a'].values, df['b'].values))
+```
+
+## 9.6 ラムダ関数
+applyメソッドの中で使う関数が十分にシンプルな時は、別の関数を作る必要がないかもしれない
+
+```python
+docs = pd.read_csv('data/doctors.csv', header=None)
+```
+
+```python
+import regex
+
+p = regex.compile('\w+\s+\w+')
+
+def get_name (s):
+    return p.match(s).group()
+
+docs['name_func'] = docs[0].apply(get_name)
+
+print(docs)
+
+# ラムダで書き直す
+docs['name_lamb'] = docs[0].apply(lambda x: p.match(x).group())
+print(docs)
+```
+
+## 9.7 まとめ
