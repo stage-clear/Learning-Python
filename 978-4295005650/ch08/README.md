@@ -190,8 +190,9 @@ s = f"Hayden Planetarium Coordinates: {lat}, {lon}"
 https://regex101.com/
 
 **基本的な正規表現の構文**
+
 |構文|説明|
-|:-|:-|
+|:-:|:-|
 |.|どの１文字にもマッチする|
 |^|文字列の先頭からマッチする|
 |$|文字列の末尾からマッチする|
@@ -200,18 +201,19 @@ https://regex101.com/
 |?|直前の文字の0回または1回の繰り返しとマッチする|
 |m|直前の文字のm回の繰り返しとマッチする|
 |{m,n}|直前の文字のm回からn回までの最大の繰り返しとマッチする|
-|¥|特殊文字をエスケープする|
+|\\ |特殊文字をエスケープする|
 |\[\]|文字集合（\[a-z\]は、aからzまでの文字）のどれかとマッチする|
 |\||「または」の意味|
 |()|丸カッコで囲まれたパターンと正確にマッチする|
-|¥d|1桁の数字とマッチする（\[0-9\]）|
-|¥D|数字ではない文字とマッチする(¥dの逆)|
-|¥s|空白とマッチする|
-|¥S|空白ではない文字とマッチする（¥sの逆）|
-|¥w|ワード文字（英数文字とアンダースコア）にマッチする|
-|¥W|ワード文字以外とマッチする（¥wの逆）|
+|\d|1桁の数字とマッチする（\[0-9\]）|
+|\D|数字ではない文字とマッチする(¥dの逆)|
+|\s|空白とマッチする|
+|\S|空白ではない文字とマッチする（¥sの逆）|
+|\w|ワード文字（英数文字とアンダースコア）にマッチする|
+|\W|ワード文字以外とマッチする（¥wの逆）|
 
 **一般的な正規表現の関数**
+
 |関数|説明|
 |:-|:-|
 |search|文字列で最初にパターンとマッチする場所を見つける|
@@ -223,3 +225,131 @@ https://regex101.com/
 |sub|パターンにマッチしたものに対して、指定した文字列を置き換えたものを返す|
 
 ### 8.6.1 パターンとのマッチ
+
+```python
+import re
+
+tele_num = '1234567890'
+```
+
+```python
+m = re.match(pattern='\d\d\d\d\d\d\d\d\d\d', string=tele_num)
+print(type(m))
+
+// 真偽値が欲しい場合
+print(bool(m)) # True
+
+// if 文で使うなら bool でキャストする必要はない
+if m:
+  print('match')
+else:
+  print('no match')
+```
+
+インデックス位置や実際にマッチした文字列などを取り出したい場合
+```python
+# マッチした文字列の最初のインデックスを取得
+print(m.start())
+
+# マッチした文字列の最後のインデックスを取得
+print(m.end())
+
+# マッチした文字列の最初と最後のインデックスを取得
+print(m.span())
+
+# パターンとマッチした文字列
+print(m.group())
+```
+
+```python
+tele_num_spaces = '123 456 7890'
+
+# 単純にパターンを使い回す
+m = re.match(pattern='\d{10}', string=tele_num_spaces) # None
+
+# 正規表現パターンは、別の変数にすることがある
+# なぜなら、パターンは長くなりがちで、そうなると
+# マッチを行う関数コールが読みにくくなるからだ
+p = '\d{3}\s?\d{3}\s?\d{4}'
+m = re.match(pattern=p, string=tele_num_spaces)
+print(m)
+```
+
+```python
+tele_num_spaces_paren_dash = '(123) 456-7890'
+
+p = '\(?\d{3}\)?\s?\d{3}\s?-?\d{4}'
+m = re.match(pattern=p, string=tele_num_spaces_paren_dash)
+print(m)
+```
+
+```python
+cnty_tele_num_spaces_paren_dash = '+1 (123) 456-7890'
+p = '\+?1\s?\(?\d{3}\)?\s?\d{3}\s?-?\d{4}'
+m = re.match(pattern=p, string=cnty_tele_num_spaces_paren_dash)
+```
+
+### 8.6.2 パターンを見つける
+findall
+
+```python
+p = '\d+'
+
+# 隣接する２つの文字列は、Pythonによって連結される
+s = "13 Jodie Whittaker, war John Hurt, 12 Peter Capaldi, "\
+    "11 Matt Smith, 10 David Tennant, 9 Christopher Ecclestorn"
+m = re.findall(pattern=p, string=s)
+print(m)
+```
+
+### 8.6.3 パターンを置換する
+replace
+
+```python
+multi_str = """Guard: What? Ridden on a horse?
+King Arthur: Yes!
+Guard: You're using coconuts!
+King Arthur: What?
+Guard: You've got ... coconut[s] and you're bangin' 'em togerther.
+"""
+
+p = '\w+\s?\w+:\s'
+```
+
+```python
+guard = s.splitlines()[ ::2]
+king = s.splitlines()[1::2]
+
+print(guard)
+print(king)
+```
+
+### 8.6.4 パターンをコンパイルする
+
+```python
+p = re.compile('\d{10}')
+s = '1234567890'
+
+# コンパイル済みパターンのmatchメソッドを
+# 呼び出す(re.match関数を使うのではない)
+m = p.match(s)
+print(m)
+```
+
+```python
+p = re.compile('\d+')
+s = "13 Jodie Whittaker, war John Hurt, 12 Peter Capaldi, "\
+    "11 Matt Smith, 10 David Tennant, 9 Christopher Eccleston"
+m = p.findall(s)
+print(m)
+```
+
+```python
+p = re.compile('\w+\s?\w+:\s?')
+s = "Guard: You're using coconuts!"
+m = p.sub(string=s, repl='')
+```
+
+より詳しい用例と説明が、[RexEgg](http://www.rexegg.com/) に掲載されている
+
+## まとめ
