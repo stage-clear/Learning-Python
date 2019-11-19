@@ -5,3 +5,131 @@
 2. データの列または行に関数を適用する
 
 ## 9.2 関数
+
+```python
+def my_function():
+    # ４個のスペースでインデントして
+    # 関数のコードを書く
+```
+
+```python
+def my_sq(x):
+    """与えられた値を2乗する"""
+    return x ** 2
+
+def avg_2(x, y):
+    """２つの数の平均値を計算する***
+    return (x + y) / 2
+
+print(my_sq(4))
+print(avg_2(10, 20))
+```
+## 9.3 apply の基礎
+https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.apply.html
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    'a': [10, 20, 30],
+    'b': [20, 30, 40]
+})
+print(df)
+```
+
+```python
+# 単純な書き方でも、列を直接2乗することができる
+print(df['a'] ** 2)
+```
+
+### 9.3.1 Series に適用する
+```python
+# 最初の列をとる
+print(type(df['a']))
+
+# 最初の行をとる
+print(type(df.iloc[0]))
+
+# 自作の関数を列aに適用
+sq = df['a'].apply(my_sq)
+print(sq)
+```
+
+```python
+def my_exp (x, e):
+    return x ** e
+
+# 第２パラメータをキーワード引数として apply に渡す
+ex = df['a'].apply(my_exp, e=2)
+print(ex)
+
+ex = df['a'].apply(my_exp, e=3)
+print(ex)
+```
+
+### 9.3.2 DataFrame に適用する
+
+```python
+df = pd.DataFrame({
+    'a': [10, 20, 30],
+    'b': [20, 30, 40]
+})
+
+print(df)
+```
+
+> ある関数を１個のDataFrameに適用するには、関数を適用すべき軸(axis)を指定する必要がある<br>
+> もし関数で列を扱いたければ、apply に axis=0 を渡す。行を扱いたければ axis=1 を渡す
+
+```python
+def print_me (x):
+    print(x)
+```
+
+#### 9.3.2.1 列ごとの演算
+
+```python
+df.apply(print_me, axis=0)
+```
+
+```python
+# この関数は列ごとに適用しようとするとエラーになる
+# 列の全体が第１引数として渡されているため
+def avg_3 (x, y, z):
+    return (x + y + z) / 3
+print(df.apply(avg_3))
+
+# 次のように書き換えられる
+def avg_3_apply(col):
+    x = col[0]
+    y = col[1]
+    z = col[2]
+    return (x + y + z) / 3
+
+df.apply(avg_3_apply)
+```
+
+#### 9.3.2.2 行ごとの演算
+
+```python
+# エラーになる
+print(df.apply(avg_3_apply, axis=1))
+
+# 書き直す
+def avg_2_apply (row):
+    x = row[0]
+    y = row[1]
+    return (x + y) / 2
+
+print(df.apply(avg_2_apply, axis=1))
+```
+
+## 9.4 apply の応用
+
+```python
+import seaborn as sns
+
+titanic = sns.load_dataset('titanic')
+
+print(titanic)
+```
