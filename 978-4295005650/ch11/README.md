@@ -195,6 +195,46 @@ print(tesla['2015'].iloc[:5, :5]) # ５行-５列
 print(tesla['2015-06'].iloc[:, :5]) # 全ての行-5列
 ```
 
-## 11.0.2 TimedeltaIndex オブジェクト
+### 11.9.2 TimedeltaIndex オブジェクト
+timedeltaでインデックスを設定する場合
+
+```python
+# timedelta を作成する
+tesla['ref_date'] = tesla['Date'] - tesla['Date'].min()
+
+tesla.index = tesla['ref_date']
+
+print(tesla.iloc[:5, :5])
+
+# これらの増分（delta）をもとに、データを選択できる
+print(tesla['0 day': '5 day'].iloc[:5, :5])
+```
+
+## 11.10 日付の範囲
+データに日付が欠けていることはよくある
+
+```python
+ebola = pd.read_csv('data/country_timeseries.csv', parse_dates=[0])
+print(ebola.iloc[:5, :5])
+```
+
+reindexメソッドによってインデックスを作り直すために日付の範囲を作るのは、よく行われる
+
+```python
+head_range = pd.date_range(start='2014-12-31', end='2015-01-05')
+
+print(head_range)
+
+# 最初の５行だけ処理する
+ebola_5 = ebola.head()
+
+# Date をインデックスとして設定する
+ebola_5.index = ebola_5['Date']
+
+# それから reindex メソッドを呼び出す
+
+ebola_5.reindex(head_range)
+print(ebola_5.iloc[:, :5]) # 全ての行-5列
+```
 
 
