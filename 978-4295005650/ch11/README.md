@@ -237,4 +237,171 @@ ebola_5.reindex(head_range)
 print(ebola_5.iloc[:, :5]) # 全ての行-5列
 ```
 
+### 11.10.1 周期
+[Offset Aliases](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
 
+<img src="offset-aliaess.png">
+
+```python
+# これらの値は freq に渡すことができる
+# 2017年1月1日を含む週の営業日
+print(pd.date_range('2017-01-01', '2017-01-07', freq='B'))
+```
+
+### 11.10.2 オフセット
+基本となる周期に対してバリエーションを与える
+
+```python
+# 2017年1月1日を含む週の "1日おき" の営業日
+print(pd.date_range('2017-01-01', '2017-01-07', freq='2B'))
+
+# 2017年の毎月の第１木曜日
+print(pd.date_range('2017-01-01', '2017-12-31', freq='WOM-1THU'))
+
+# 毎月の第３金曜日
+print(pd.date_range('2017-01-01', '2017-12-31', freq="WOM-3FRI"))
+```
+
+## 11.11 値をシフトする
+
+```python
+import matplotlib.pyplot as plt
+
+ebola.index = ebola['Date']
+
+fig, ax = plt.subplots()
+ax = ebola.plot(ax=ax)
+
+# 上記の行で ValueError が発生. 上記２行目のインデックス化を行わず、下記コードにより,
+# データのロード時にインデックス化と日時解析を行っておくと図11.3が表示された
+# ebola = pd.read_csv('../data/country_timeseries.csv', index_col='Date', parse_dates=['Date'])
+
+ax.legend(fontsize=7, loc=2, borderraxespad=0.)
+plt.show()
+```
+
+```python
+ebola_sub = ebola[['Day', 'Cases_Guinea', 'Cases_Liberia']]
+print(ebola_sub.tail(10))
+```
+
+```python
+ebola = pd.read_csv('data/country_timeseries.csv', index_col='Date', parse_dates=['Date'])
+print(ebola.head().iloc[:, :4])
+print(ebola.tail().iloc[:, :4])
+
+new_idx = pd.date_range(ebola.index.min(), ebola.index.max())
+
+# 日付が望ましい順序になっていない
+print(new_idx)
+
+new_idx = reversed(new_idx)
+ebola = ebola.reindex(new_idx)
+
+print(ebola.head().iloc[:, :4])
+print(ebola.tail().iloc[:, :4])
+
+# last_valid_index は欠損していない最後の値の index である
+# first_valid_index は欠損していない最初の値の index である
+# すべての列に対して行うために apply メソッドを使う
+last_valid = ebola.apply(pd.Series.last_valid_index)
+print(last_valid)
+
+# データセットでもっとも早い日付を取得する
+earliest_date = ebola.index.min()
+print(earliest_date)
+
+# この日付を last_valid の個々の日付から引いてシフト量を求める
+shift_values = last_valid - earliest_date
+print(shift_values)
+
+
+ebola_dict = {}
+for idx, col in enumerate(ebola):
+    d = shift_values[idx].days
+    shifted = ebola[col].shift(d)
+    ebola_dict[col] = shifted
+
+ebola_shift = pd.DateFrame(ebola_dict)
+ebola_shift = ebola_shift[ebola.columns]
+
+# インデックスを日付から Day に差し替える
+ebola_shift.index = ebola_shift['Day']
+ebola_shift = ebola_shift.drop(['Day'], axis=1)
+```
+
+## 11.12 リサンプリング
+ここでのリサンプリング（再標本化）とは、datetime を、ある周期から別の周期に変換することである
+
+1. ダウンサンプリング: 高い周期から、より低い周期へ（たとえば、毎日から毎月へ）
+2. アップサンプリング: 低い周期から、より高い周期へ（たとえば、毎月から毎日へ）
+3. 変化なし: 周期が変化しない（たとえば月の第１木曜から、月の最後の金曜へ）
+
+リサンプルを行うには、別名を resample 関数に渡せばよい
+
+```python
+# 毎日の値を毎月の値にダウンサンプリングする. 値が複数あるので
+# 結果を集約する必要があるが、ここでは平均値を使う
+down = ebola.resample('M').mean()
+print(down.iloc[:5, :5])
+
+# いったんダウンサンプリングした値をアップサンプリングする
+# これにより, 欠けていた日付が欠損値によって埋められる
+up = down.resample('D').mean()
+print(up.iloc[:5, :5])
+```
+
+## 11.13 時間帯
+時間帯コンバータを自分で書こうとしてはいけない。
+
+print(down.iloc[:5, :5])
+
+Pythonには時間帯を扱えるよう、特別に設計された pytz というライブラリがあり、pandasでも時間帯を扱うときは、
+このライブラリをラップしている
+
+```python
+import pytz
+
+print(len(pytz.all_timezones))
+```
+
+```python
+import re
+
+regex = re.compile(r'^US')
+selected_files = filter(regex.search, pytz.common_timezones)
+print(list(selected_files))
+```
+
+時間帯を表す方法の１つは, pandas の Timestamp オブジェクトを使って, ２つのタイムスタンプを作ることだ
+```python
+# 7AM Eastern（米東部）
+depart = pd.Timestamp('2017-08-29 07:00', tz='US/Eastern')
+print(depart)
+
+# 時間帯は tz_localize 関数をつかうことでも表現できる
+arrive = pd.Timestamp('2017-08-29 09:57')
+print(arive)
+
+arrive = arrive.tz_localize('US/Pacific')
+print(arrive)
+# -> 2017-08-29 09:57:00-07:00
+
+# フライトが到着したときに、東海岸で何時になっているかは
+# 東部時間帯に変換することで知ることができる
+print(arrive.tz_convert('US/Eastern'))
+# -> 2017-08-29 12:57:00-04:00
+
+
+# 時間帯に対する演算も可能である
+# 演算を行うためには、時間帯が同じか、存在しないか、どちらかでなければならない
+# 次の例は、エラーになる
+duration = arrive - depart
+
+# 飛行時間を求める
+duration = arrive.tz_convert('US/Eastern') - depart
+print(duration)
+# -> 0 days 05:57:00
+```
+
+## 11.14 まとめ
