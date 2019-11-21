@@ -1,6 +1,7 @@
 # http://www.algo-fx-blog.com/fx-api-rate-streaming-python/
 import pandas as pd
 import matplotlib
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 import mpl_finance as mpf
 from matplotlib import ticker
@@ -13,7 +14,7 @@ sys.path.append(os.getcwd())
 from basic import accountID, access_token, api
 
 # https://qiita.com/typecprint/items/0d4bea1251ab3f816303
-print(matplotlib.matplotlib_fname())
+# print(matplotlib.matplotlib_fname())
 # backend: TkAgg
 # backend: Qt5Agg
 
@@ -23,51 +24,54 @@ params = {
 }
 
 # APIから為替レートのストリーミングを取得
-r = instruments.InstrumentsCandles(instrument="USD_JPY", params=params)
+r = instruments.InstrumentsCandles(instrument="GBP_JPY", params=params)
 api.request(r)
 
 # ストリーミングの最初の1件目のデータを確認
 print(r.response["candles"][0])
 
 # 為替レートの dict を DataFrame へ変換
-rate = pd.DataFrame.from_dict({r.response["candles"][i]["time"]: r.response["candles"][i]["mid"]
-                            for i in range(0, len(r.response["candles"]))
-                            for j in r.response["candles"][i]["mid"].keys()},
-                        orient="index",
-                      )
+rate = pd.DataFrame.from_dict([ row['mid'] for row in r.response['candles'] ])
+rate = rate.astype({'c': 'float64', 'l': 'float64', 'h': 'float64', 'o': 'float64'})
+rate.columns = ['close', 'high', 'low', 'open']
+rate['time'] = [ row['time'] for row in r.response['candles'] ]
+rate['time'] = pd.to_datetime(rate['time']).astype(str)
 
 # インデックスの日付を綺麗にする
-rate.index = pd.to_datetime(rate.index)
+rate.index = pd.to_datetime(rate['time'])
 
 # DataFrameの確認
 print(rate.head())
 
 # データフレームからローソク足チャートへ
-def candlechart(data, width=0.8):
+def candlechart(data, width=0.6):
     fig, ax = plt.subplots()
+
+    print(data)
     # ローソク足
-    mpf.candlestick2_ohlc(ax, opens=data.o.values, closes=data.c.values,
-                          lows=data.l.values, highs=data.h.values,
-                          width=width, colorup='r', colordown='b')
+    mpf.candlestick2_ohlc(
+        ax,
+        opens=data.open.values,
+        closes=data.close.values,
+        lows=data.low.values,
+        highs=data.high.values,
+        width=width,
+        colorup='#77d879',
+        colordown='#db3f3f')
 
-    # x軸を時間にする
-    xdate = data.index
-    ax.xaxis.set_major_locator(ticker.MaxNLocator(6))
-
-    def mydate(x, pos):
-        try:
-            return xdate[int(x)]
-        except IndexError:
-            return ''
-
-    ax.xaxis.set_major_formatter(ticker.FuncFormatter(mydate))
-    ax.format_xdata = mdates.DateFormatter('%Y-%m-%d')
-
+    xticks_number  = 12
+    xticks_index   = range(0, len(data), xticks_number)
+    xticks_display = [data.time.values[i][11:16] for i in xticks_index]
+    # 時間を切り出すため、先頭12文字目から取る
 
     fig.autofmt_xdate()
     fig.tight_layout()
 
-    return fig, ax
+    plt.sca(ax)
+    plt.xticks(xticks_index, xticks_display)
+    plt.legend()
+    plt.show()
+    #return fig, ax
 
 # ローソク足チャートのプロッティング
 candlechart(rate)
