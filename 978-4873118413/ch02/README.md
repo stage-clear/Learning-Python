@@ -105,7 +105,7 @@ np.zeros(10, dtype='int16')
 np.zeros(10, dtype=np.int16)
 ```
 
-<img src="numpy_dtype.png">
+<img src="numpy_dtype.png" width="600" height="auto">
 
 ## 2.2 NumPy 配列の基礎
 
