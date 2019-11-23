@@ -50,7 +50,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 x = np.linspace(0, 10, 100)
 
-fig = plt.figure(9
+fig = plt.figure()
 plt.plot(x, np.sin(x), '-')
 plt.plot(x, np.cos(x), '--')
 ```
@@ -228,3 +228,42 @@ ax.set(
 ```
 
 ## 4.4 単純な散布図
+
+```python
+%matplotlib inline
+import matplotlib.pyplot as plt
+plt.style.use('seaborn-whitegrid')
+import numpy as np
+```
+
+### 4.4.1 plt.plot を使った散布図
+
+```python
+x = np.linspace(0, 10, 30)
+y = np.sin(x)
+plt.plot(x, y, 'o', color='black')
+```
+
+```python
+rng = np.random.RandomState(0)
+for marker in ['o', '.', ',', 'x', '+', 'v', '^', '<', '>', 's', 'd']:
+    plt.plot(rng.rand(5), rng.rand(5), marker, label="marker='{0}'".format(marker))
+plt.legend(numpoints=1)
+plt.xlim(0, 1.8)
+
+plt.plot(x, y, '-ok') # line(-) circle marker(0), black(k)
+```
+
+```python
+plt.plot(x, y, '-p', color='gray',
+    markersize=15, linewidth=4,
+    markerfacecolor='white',
+    markeredgecolor='gray',
+    markeredgewidth=2
+)
+plt.ylim(-1.2, 1.2)
+```
+
+https://matplotlib.org/3.1.0/api/_as_gen/matplotlib.pyplot.plot.html
+
+### 4.4.2 plt.scatter を使った散布図
