@@ -264,7 +264,7 @@ plt.plot(x, y, '-p', color='gray',
 plt.ylim(-1.2, 1.2)
 ```
 
-https://matplotlib.org/3.1.0/api/_as_gen/matplotlib.pyplot.plot.html
+[matplotlib.pyplot](https://matplotlib.org/3.1.0/api/_as_gen/matplotlib.pyplot.plot.html)
 
 ### 4.4.2 plt.scatter を使った散布図
 
@@ -288,3 +288,9 @@ plt.scatter(features[0], features[1], alpha=0.2,
 plt.xlabel(iris.feature_names[0])
 plt.ylabel(iris.feature_names[1])
 ```
+
+### 4.4.3 plot メソッド対scatterメソッド: 効率に関する注意点
+データセットが数千ポイントを超えると、plt.plotはplt.scatterよりもずっと効率的です。
+
+## 4.5 誤差の可視化
+
