@@ -293,4 +293,144 @@ plt.ylabel(iris.feature_names[1])
 データセットが数千ポイントを超えると、plt.plotはplt.scatterよりもずっと効率的です。
 
 ## 4.5 誤差の可視化
+### 4.5.1 基本的なエラーバー
+
+```python
+%matplotlib inline
+import matplotlib.pyplot as plt
+plt.style.use('seaborn-whitegrid')
+import numpy as np
+
+x = np.linspace(0, 10, 50)
+dy = 0.8
+y = np.sin(x) + dy * np.random.randn(50)
+
+plt.errorbar(x, y, yerr=dy, fmt='.k')
+```
+
+```python
+plt.errorbar(x, y, yerr=dy, fmt='o', color='black', ecolor='lightgray', elinewidth=3, capsize=0)
+```
+
+### 4.5.2 連続誤差
+
+```python
+from sklearn.gaussian_process import GaussianProcess
+model = lambda x: x * np.sin(x)
+xdata = np.array([1,3,5,6,8])
+ydata = model(xdata)
+
+gp = GaussianProcess(corr='cubic', theta0=13-2, thetaU=1E-1, random_start=100)
+gp.fit(xdata[:, np.newaxis], ydata)
+
+xfit = np.linspace(0, 10, 1000)
+yfit, MSE = gp.predict(xfit[:, np.newaxis], eval_MSE=True)
+dyfit = 2 * np.sqrt(MSE) # 2*σつまり95%の信頼区間
+
+# 結果を可視化する
+plt.plot(xdata, ydata, 'or')
+plt.plot(xfit, yfit, '-', color='gray')
+plt.fil_between(xfit, yfit - dyfit, yfit + dyfit, color='gray', alpha=0.2)
+plt.xlim(0, 10)
+```
+
+## 4.6 密度と等高線図
+
+```python
+% matplotlib inline 
+import matplotlib.pyplot as plt
+plt.style.use('seaborn-white')
+import numpy as np
+```
+
+### 4.6.1 ３次元関数の可視化
+
+```python
+def f(x, y):
+    return np.sin(x) ** 10 + np.cos(10 + y * x) * np.cos(x)
+```
+
+等高線図は plt.contour関数を使用して作成できます
+
+```python
+x = np.linspace(0, 5, 50)
+y = np.linspace(0, 5, 40)
+X, Y = np.meshgrid(x, y)
+Z = f(X, Y)
+
+plt.contour(X, Y, Z, colors='black')
+```
+
+```python
+plt.contour(X, Y, Z, 20, cmap='RdGy')
+```
+
+```python
+plt.contourf(X, Y, Z, 20, cmap='RdGy')
+plt.colorbar()
+```
+
+```python
+plt.imshow(Z, extent=[0, 5, 0, 5], origin='lower', cmap='RdGy')
+plt.colorbar()
+plt.axis(aspect='image')
+```
+
+```python
+contours = plt.contour(X, Y, Z, 3, colors='black')
+plt.clabel(contours, inline=True, fontsize=8)
+plt.imshow(Z, extent=[0, 5, 0, 5], origin='lower', cmap='RdGy', alpha=0.5)
+plt.colorbar()
+```
+
+## 4.7 ヒストグラム、ビニング、密度
+
+```python
+%matplotlib inline
+import numpy as np
+import matplotlib.pyplot as plt
+plt.style.use('seaborn-white')
+
+data = np.random.randn(1000)
+
+plt.hist(data)
+```
+
+```python
+plt.hist(data, bins=30, normed=True, alpha=0.5, histtype='stepfilled', color='steelblue', edgecolor='none')
+```
+
+```phthon
+x1 = np.random.normal(0, 0.8, 1000)
+x2 = np.random.normal(-2, 1, 1000)
+x3 = np.random.normal(3, 2, 1000)
+
+kwargs = dict(histtype='stepfilled', alpha=0.3, normed=True, bins=40)
+
+plt.hist(x1, **kwargs)
+plt.hist(x2, **kwargs)
+plt.hist(x3, **kwargs)
+```
+
+ヒストグラムの計算だけを行い、表示をしないのであれば、np.histogram()関数が利用できます
+```python
+counts, bin_edges = np.histogram(data, bins=5)
+print(counts)
+```
+
+### 4.7.1 ２次元ヒストグラムとビニング
+
+```python
+# 多変量ガウス分布から得られたxおよびy配列のデータを定義します
+mean = [0, 0]
+cov = [[1, 1], [1, 2]]
+x, y = np.random.multivariate_normal(mean, cov, 10000).T
+```
+
+#### 4.7.1.1 plt.hist2d: 2次元ヒストグラム
+
+```python
+
+```
+
 
