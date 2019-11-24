@@ -927,3 +927,103 @@ ax.set_ylim(3600, 5400)
 https://matplotlib.org/examples/pylab_examples/annotation_demo2.html
 
 ## 4.12 メモリのカスタマイズ
+### 4.12.1 主目盛と補助目盛
+
+```python
+%matplotlib inline
+import matplotlib.pyplot as plt
+plt.style.use('classic')
+import numpy as np
+
+ax = plt.axes(xscale='log', yscale='log', xlim=[1E-7, 1E-1], ylim=[1E-7, 1E-1])
+ax.grid()
+
+print(ax.xaxis.get_major_locator())
+print(ax.xaxis.get_minor_locator())
+
+print(ax.xaxis.get_major_formatter())
+print(ax.xaxis.get_minor_formatter())
+```
+
+### 4.12.2 非表示の目盛とラベル
+plt.NullLocator() / plt.NullFormatter()
+
+```python
+ax = plt.axes()
+ax.plot(np.random.rand(50))
+
+# x軸から（目盛と目盛り線は残して）ラベルを削除し,
+# y軸から目盛を削除
+ax.yaxis.set_major_locator(plt.NullLocator())
+ax.xaxis.set_major_formatter(plt.NullFormatter())
+ax.xaxis.set_minor_locator(plt.NullLocator())
+```
+
+```python
+fig, ax = plt.subplots(5, 5, figsize=(5, 5))
+fig.subplots_adjust(hspace=0, wspace=0)
+
+# 顔の画像を scikit-learn から取得する
+from sklearn.datasets import fetch_olivetti_faces
+faces = fetch_olivetti_faces().images
+
+for i in range(5):
+    for j in range(5):
+        ax[i, j].xaxis.set_major_locator(plt.NullLocator())
+        ax[i, j].yaxis.set_major_locator(plt.NullLocator())
+        ax[i, j].imshow(faces[10 * i + j], cmap='bone')
+```
+
+### 4.12.3 目盛の増減と削減
+
+小さなプロットに多数のラベルがついてしまうことへの対処
+
+```python
+fig, ax = plt.subplots(4,4, sharex=True, sharey=True)
+
+# xとy軸それぞれに主目盛を設定する
+for axi in ax.flat:
+    axi.xaxis.set_major_locator(plt.MaxNLocator(3))
+    axi.yaxis.set_major_locator(plt.MaxNLocator(3))
+```
+
+### 4.12.4 目盛のフォーマットの調整
+
+```python
+# 正弦と余弦をプロットする
+fig, ax = plt.subplots()
+x = np.linspace(0, 3 * np.pi, 1000)
+ax.plot(x, np.sin(x), lw=3, label='Sine')
+ax.plot(x, np.cos(x), lw=3, label='Cosine')
+
+# グリッド、凡例、範囲を設置する
+ax.grid(True)
+ax.legend(frameon=False)
+ax.axis('equal')
+ax.set_xlim(0, 3 * np.pi)
+
+ax.xaxis.set_major_locator(plt.MultipleLocator(np.pi / 2))
+ax.xaxis.set_monor_locator(plt.MultipleLocator(np.pi / 4))
+
+def format_func(value, tick_number):
+    # pi / 2 の何倍かを見分ける
+    N = int(np.round(2 * value / np.pi))
+    if N == 0:
+        return '0'
+    elif N == 1:
+        return r'$\pi/2$'
+    elif N == 2:
+        return r'$\pi$'
+    elif N ==2 > 0:
+        return r'${0}\pi/2$'.format(N)
+    else:
+        return r'${0}\pi$'.format(N // 2)
+
+ax.xaxis.set_major_formatter(plt.FuncFormatter(format_func))
+```
+
+> 文字列をドル記号で囲んで指定するLaTeXサポートを利用しています。こうして数学記号や数式が表示できます
+
+### 4.12.5 Formatter と Locator のまとめ
+
+
