@@ -1027,3 +1027,267 @@ ax.xaxis.set_major_formatter(plt.FuncFormatter(format_func))
 ### 4.12.5 Formatter と Locator のまとめ
 
 <img src="locator_formatter.png" width="600" height="auto">
+
+## 4.13 Matplotlib のカスタマイズ: 設定とスタイルシート
+
+### 4.13.1 手作業でカスタマイズ
+
+```python
+import matplotlib.pyplot as plt
+plt.style.use('classic')
+import numpy as np
+
+%matplotlib inline
+
+x = np.random.randn(1000)
+plt.hist(x)
+
+# 背景をグレーに設定
+ax = plt.axes(facecolor='#e6e6e6')
+ax.set_axisbelow(True)
+
+# グリッド線を白の実践に
+plt.grid(color='w', linestyle='solid')
+
+# 上と右の目盛を非表示
+ax.xaxis.tick_bottom()
+ax.yaxis.tick_left()
+
+# 目盛とラベルを明るい色に設定
+ax.tick_params(colors='gray', direction='out')
+
+for tick in ax.get_xticklabels():
+    tick.set_color('gray')
+for tick in ax.get_yticklabels():
+    tick.set_color('gray')
+
+# ヒストグラムの面と境界の色を設定
+ax.hist(x, edgecolor='#e6e6e6', color='#ee6666')
+```
+
+### 4.13.2 デフォルトの変更: rcParams
+
+```python
+IPython_default = plt.rcParams.copy()
+
+from matplotlib import cycler
+colors = cycler('color',
+    [
+        '#ee6666', '#3388bb', '#9988dd',
+        '#eecc55', '#88bb44', '#ffbbbb'
+    ])
+plt.rc('axes', facecolor='#e6e6e6', edgecolor='none',
+    axisbelow=True, grid=True, prop_cycle=colors)
+plt.rc('grid', color='w', linestyle='solid')
+plt.rc('xtick', direction='out', color='gray')
+plt.rc('ytick', direction='out', color='gray')
+plt.rc('patch', edgecolor='#e6e6e6')
+plt.rc('lines', linewidth=2)
+```
+
+```python
+for i in range(4):
+    plt.plot(np.random.rand(10))
+```
+
+### 4.13.3 スタイルシート
+利用可能なスタイルの一覧が plt.style.available です
+
+```python
+plt.style.available[:-5]
+
+plt.style.use('stylename')
+```
+
+```python
+# スタイルを一時的に設定するなら、スタイル・コンテキスト・マネージャを使用します
+
+with plt.style.context('stylename'):
+    make_a_plot()
+```
+
+```python
+def hist_and_lines():
+    np.random.seed(0)
+    fig, ax = plt.subplots(1, 2, figsize=(11,4))
+    ax[0].hist(np.random.randn(1000))
+    for i in range(3):
+        ax[1].plot(np.random.rand(10))
+    ax[1].legend(['a', 'b', 'c'], loc='lower left')
+```
+
+####  4.13.3.1 デフォルトスタイル
+
+```python
+# rcParams のリセット
+plt.rcParams.update(IPython_default)
+```
+
+```python
+hist_and_lines()
+
+with plt.style.context('fivethirtyeight'):
+    hist_and_lines()
+```
+
+#### 4.13.3.3 ggplot
+
+```python
+with plt.style.context('ggplot'):
+    hist_and_lines()
+```
+
+#### 4.13.3.4 ハッカーのためのベイジアンメソッドスタイル
+
+```python
+with plt.style.context('bmh'):
+    hist_and_lines()
+```
+
+#### 4.13.3.5 暗い背景スタイル
+
+```python
+with plt.style.context('dark_background'):
+    hist_and_lines()
+```
+
+### 4.13.3.6 グレースケール
+
+```python
+with plt.style.context('grayscale'):
+    hist_and_lines()
+```
+
+#### 4.13.3.7 Seaborn スタイル
+
+```python
+import seaborn
+```
+
+## 4.14 Matplotlib を使った３次元プロット
+
+```python
+from mpl_toolkits import mplot3d
+
+%matplotlib inline
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+```
+
+### 4.14.1 ３次元の点と線
+
+```python
+ax = plt.axes(projection='3d')
+
+# ３次元曲線のデータ
+zline = np.linspace(0, 15, 1000)
+xline = np.sin(zline)
+yline = np.cos(zline)
+ax.plot3D(xline, yline, zline, 'gray')
+
+# ３次元の点データ
+zdata = 15 * np.random.random(100)
+xdata = np.sin(zdata) + 0.1 * np.random.randn(100)
+ydata = np.cos(zdata) + 0.1 * np.random.randn(100)
+ax.scatter3D(xdata, ydata, zdata, c=zdata, cmap='Greens')
+```
+
+### 4.14.4 ３次元等高線図
+
+```python
+def f(x, y):
+    return np.sin(np.sqrt(x ** 2 + y ** 2))
+
+x = np.linspace(-6, 6, 30)
+y = np.linspace(-6, 6, 30)
+X, Y = np.meshgrid(x, y)
+Z = f(X, Y)
+
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax.contour3D(X, Y, Z, 50, cmap='binary')
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('z')
+
+ax.view_init(60, 35)
+```
+
+### 4.14.3 ワイヤーフレームとサーフェス
+
+```python
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax.plot_wireframe(X, Y, Z, color='black')
+ax.set_title('wireframe')
+```
+
+```python
+ax = plt.axes(projection='3d')
+ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
+    cmap='viridis', edgecolor='none')
+```
+
+```python
+r = np.linspace(0, 6, 20)
+theta = np.linspace(-0.9 * np.pi, 0.8 * np.pi, 40)
+I, theta = np.meshgrid(r, theta)
+
+X = r * np.sin(theta)
+Y = r * np.cos(theta)
+Z = f(X, Y)
+
+ax = plt.axes(projection='3d')
+ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
+    cmap='viridis', edgecolor='none')
+```
+
+### 4.14.4 三角形分割のサーフェス
+
+```python
+theta = 2 * np.pi * np.random.random(1000)
+r = 6 * np.random.random(1000)
+x = np.ravel(r * np.sin(theta))
+y = np.ravel(r * np.cos(theta))
+z = f(x, y)
+
+ax = plt.axes(projection='3d')
+ax.scatter(x, y, z, c=z, cmap='viridis', linewidth=0.5)
+
+ax = plt.axes(projection='3d')
+ax.plot_trisurf(x, y, z, cmap='viridis', edgecolor='none')
+```
+
+#### 4.14.4.1 事例: メビウスの輪の可視化
+
+```python
+theta = np.linspace(0, 2 * np.pi, 30)
+w = np.linspace(-0.25, 0.25, 8)
+w, theta = np.meshgrid(w, theta)
+
+phi = 0.5 * theta
+
+# x-y平面上での半径r
+r = 1 + w * np.cos(phi)
+
+x = np.ravel(r * np.cos(theta))
+y = np.ravel(r * np.sin(theta))
+z = np.ravel(w * np.sin(phi))
+
+# パラメータから三角形分割を行う
+from matplotlib.tri import Triangulation
+tri = Triangulation(np.ravel(w), np.ravel(theta))
+
+ax = plt.axes(projection='3d')
+ax.plot_trisurf(x, y, z, triangles=tri.triangles,
+    cmap='viridis', linewidth=0.2)
+
+ax.set_xlim(-1, 1)
+ax.set_ylim(-1, 1)
+ax.set_zlim(-1, 1)
+```
+
+## 4.15 Basemap を使った地理データの処理
