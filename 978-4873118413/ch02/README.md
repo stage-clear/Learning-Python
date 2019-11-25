@@ -196,9 +196,290 @@ x2[:2, :3]
 # すべての行と, 1つおきの列
 x2[:3, ::2]
 
+# すべての行を一度に逆順
+x2[::-1, ::-1]
+
 # x2の最初の列
 print(x2[:, 0])
 
 # x2の最初の行
 print(x2[0, :])
+
+# 空のスライスを省略（x2[0, :]）
+print(x2[0])
 ```
+
+#### 2.2.3.3 ビューとしての部分配列
+
+```python
+# ２行２列の部分配列を抽出
+x2_sub = x2[:2, :2]
+
+# この部分配列を変更すると, 元の配列も変更される
+x2_sub[0, 0] = 99
+print(x2_sub)
+print(x2)
+```
+
+#### 2.2.3.4 配列のコピー
+
+```python
+x2_sub_copy = x2[:2, :2].copy()
+
+# この部分配列を変更しても, 元の配列には影響しない
+x2_sub_copy[0, 0] = 42
+
+print(x2_sub_copy)
+print(x2)
+```
+
+## 2.2.4 配列の形状変更
+
+```python
+grid = np.arange(1, 10).reshape((3, 3))
+print(grid)
+```
+
+```python
+x = np.array([1, 2, 3])
+
+# reshapeを用いた行ベクトルの作成
+x.reshape((1, 3))
+
+# newaxis を用いた行ベクトルの作成
+x[np.newaxis, :]
+
+# reshapeを用いた列ベクトルの作成
+x.reshape((3, 1))
+
+# newaxisを用いた列ベクトルの作成
+x[:, np.newaxis]
+```
+
+### 2.2.5 配列の連結と分割
+配列の連結または結合は、主に np.concatenate, np.vstack, np.hstack によって実行します
+
+```python
+x = np.array([1, 2, 3])
+y = np.array([3, 2, 1])
+np.concatenate([x, y])
+
+z = [99, 99, 99]
+np.concatenate([x, y, z])
+
+# ２次元配列
+grid = np.array([[1,2,3], [4, 5, 6]])
+
+np.concatenate([grid, grid]) # 第１の軸に沿って連結する
+
+np.concatenate([grid, grid], axis=1) # 第２の軸に沿って連結する
+```
+
+```python
+x = np.array([1, 2, 3])
+grid = np.array([[9,8,7], [6,5,4]])
+# 配列を垂直に重ねる
+np.vstack([x, grid])
+
+# 配列を水平に重ねる
+y = np.array([[99], [99]])
+
+np.hstack([grid, y])
+```
+
+#### 2.2.5.2 配列の分割
+
+```python
+x = [1,2,3,99,99,3,2,1]
+x1, x2, x3 = np.split(x, [3, 5])
+
+grid = np.arange(16).reshape((4, 4))
+upper, lower = np.vsplit(grid, [2])
+print(upper)
+print(lower)
+
+left, right = np.hsplit(grid, [2])
+```
+
+## 2.3 NumPy配列の計算: ユニバーサル関数
+### 2.3.1 低速なループ処理
+- [PyPy](http://pypy.org/)
+- [Cython](http://cython.org/)
+- [Numba](http://numba.pydata.prg/)
+
+```python
+import numpy as np
+np.random.seed(0)
+
+def compute_reciprocals(values):
+    output = np.empty(len(values))
+    for i in range(len(values)):
+        output[i] = 1.0 / values[i]
+    return output
+
+values = np.random.randint(1, 10, size=5)
+compute_reciprocals(values)
+```
+
+```python
+big_array = np.random.randint(1, 100, size=1000000)
+%timeit compute_reciprocals(big_array)
+```
+
+### 2.3.2 ufuncの紹介
+
+```python
+print(compute_reciprocals(values))
+```
+
+```python
+x = np.arange(9).reshape((3, 3))
+2 ** x
+```
+
+### 2.3.3 NumPy ufuncの調査
+
+```python
+x = np.arange(4)
+print('x     =', x)
+print('x + 5 =', x + 5)
+print('x - 5 =', x - 5)
+print('x * 2 =', x * 2)
+print('x / 2 =', x / 2)
+print('x // 2 =', x // 2)
+
+print('-x     =', -x)
+print('x ** 2 =', x ** 2)
+print('x % 2 =', x % 2)
+
+-(0.5 * x + 1) ** 2
+
+np.add(x, 2)
+```
+
+**NumPyに実装された算術演算し**<br>
+<img src="unfunc.png" width="560" height="auto">
+
+#### 2.3.3.2 絶対値
+
+```python
+x = np.array([-2, -1, 0, 1, 2])
+abs(x)
+np.absolute(x)
+np.abs(x)
+
+x = np.array([3 - 4j, 4 - 3j, 2 + 0j, 0 + 1j])
+np.abs(x)
+```
+
+#### 2.3.3.3 三角関数
+
+```python
+theta = np.linspace(0, np.pi, 3)
+
+print('theta      =', theta)
+print('sin(theta) =', np.sin(theta))
+print('cos(theta) =', np.cos(theta))
+print('tan(theta) =', np.tan(theta))
+```
+
+```python
+x = [-1, 0, 1]
+
+print('x         =', x)
+print('arcsin(x) =', np.arcsin(x))
+print('arccos(x) =', np.arccos(x))
+print('arctan(x) =', np.arctan(x))
+```
+
+#### 2.3.3.4 指数関数と対数関数
+
+```python
+x = [1, 2, 3]
+
+print('x    =', x)
+print('e^x  =', np.exp(x))
+print('2^x  =', np.exp2(x))
+print('3^x  =', np.power(3, x))
+```
+
+```python
+x = [1, 2, 3, 10]
+
+print('x        =', x)
+print('ln(x)    =', np.log(x))
+print('log2(x)  =', np.log2(x))
+print('log10(x) =', np.log10(x))
+```
+
+```python
+x = [0, 0.001, 0.01, 0.1]
+
+print('exp(x) - 1 =', np.expm1(x))
+print('log(1 + x) =', np.log1p(x))
+```
+
+#### 2.3.3.5 特殊のufunc
+
+```python
+from scipy import special
+
+# ガンマ関数（階乗を一般化したもの）およびその関連
+x = [1, 5, 10]
+
+print('gamma(x)     =', special.gamma(x))
+print('ln|gamma(x)| =', special.gammaln(x))
+print('beta(x, 2)   =', special.beta(x, 2))
+```
+
+```python
+# 誤差関数（ガウス関数の積分）および
+# 相補誤差関数と逆誤差関数
+x = np.array([0, 0.3, 0.7, 1.0])
+
+print('erf(x)    =', special.erf(x))
+print('erfc(x)   =', special.erfc(x))
+print('erfinv(x) =', special.erfinv(x))
+```
+
+### 2.3.4 高度なufuncの機能
+#### 2.3.4.1 出力の指定
+
+```python
+x = np.arange(5)
+y = np.empty(5)
+np.multiply(x, 10, out=y)
+print(y)
+```
+
+```python
+y = np.zeros(10)
+np.power(2, x, out=y[::2])
+print(y)
+```
+
+#### 2.3.4.2 集約
+
+```python
+x = np.arange(1, 6)
+
+# reduceは, 結果が1つになるまで配列の要素に繰り返し演算を適用します
+np.add.reduce(x)
+
+np.multiply.reduce(x)
+
+# 中間結果を残したい場合は, accumulate を使います
+np.add.accumulate(x)
+
+np.multiply.accumulate(x)
+```
+
+#### 2.3.4.3 外積
+
+
+
+
+
+
+
+
