@@ -1026,4 +1026,4 @@ ax.xaxis.set_major_formatter(plt.FuncFormatter(format_func))
 
 ### 4.12.5 Formatter と Locator のまとめ
 
-
+<img src="locator_formatter.png" width="600" height="auto">
