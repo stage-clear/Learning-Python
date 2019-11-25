@@ -1291,3 +1291,212 @@ ax.set_zlim(-1, 1)
 ```
 
 ## 4.15 Basemap を使った地理データの処理
+> Skip 😛
+
+## 4.16 Seaborn による可視化
+
+### 4.16.1 Seaborn 対 Matplotlib
+
+```python
+import matplotlib.pyplot as plt
+plt.style.use('classic')
+%matplotlib inline
+import numpy as np
+import pandas as pd
+
+# データの作成
+rng = np.random.RandomState(0)
+x = np.linspace(0, 10, 500)
+y = np.cumsum(rng.randn(500, 6), 0)
+
+# Matplotlibのデフォルトでプロットする
+plt.plot(x, y)
+plt.legend('ABCDEF', ncol=2, loc='upper left')
+```
+
+```python
+import seaborn as sns
+sns.set()
+
+# 同じプロトコード
+plt.plot(x, y)
+plt.legend('ABCDEF', ncol=2, loc='upper left')
+```
+
+### 4.16.2 Seabornプロットの探索
+
+#### 4.16.2.1 ヒストグラム, KDE, 密度
+
+```python
+data = np.random.multivariate_normal([0, 0], [[5, 2], [2, 2]], size=2000)
+data = pd.DataFrame(data, columns=['x', 'y'])
+for col in 'xy':
+    plt.hist(data[col], normed=True, alpha=0.5)
+
+for col in 'xy':
+    sns.kdeplot(data[col], shade=True)
+
+sns.distplot(data['x'])
+sns.distplot(data['y'])
+
+```
+
+```python
+sns.kdeplot(data)
+
+with sns.axes_style('white'):
+    sns.jointplot('x', 'y', data, kind='kde')
+```
+
+```python
+with sns.axes_style('white'):
+    sns.jointplot('x', 'y', data, kind='hex')
+```
+
+#### 4.16.2.2 ペアプロット
+
+```python
+iris = sns.load_dataset('iris')
+iris.head()
+
+sns.pairplot(iris, hue='species', size=2.5)
+```
+
+#### 4.16.2.3 層別ヒストグラム
+
+```python
+tips = sns.load_dataset('tips')
+tips.head()
+
+tips['tip_pct'] = 100 * tips['tip'] / tips['total_bill']
+grid = sns.FacetGrid(tips, row='sex', col='time', margin_titles=True)
+grid.map(plt.hist, 'tip_pct', bins=np.linspace(0, 40, 15))
+```
+
+#### 4.16.2.4 ファクタープロット
+
+```python
+with sns.axes_style(style='ticks'):
+    g = sns.factorplot('day', 'total_bill', 'sex', data=tips, kind='box')
+    g.set_axis_labels('Day', 'Total Bill')
+```
+
+#### 4.16.2.5 結合分布
+
+```python
+with sns.axes_style('white'):
+    sns.jointplot('total_bill', 'tip', data=tips, kind='hex')
+
+sns.jointplot('total_bill', 'tip', data=tips, kind='reg')
+```
+
+#### 4.16.2.6 棒グラフ
+
+```python
+planets = sns.load_dataset('planets')
+planets.head()
+
+with sns.axes_style('white'):
+    g = sns.factorplot('year', data=planets, aspect=2, kind='count', color='steelblue')
+    g.get_xticklables(step=5)
+```
+
+```python
+with sns.axes_style('white'):
+    g = sns.factorplot('year', data=planets, aspect=4.0, kind='count',
+        hue='method', order=range(2001, 2015))
+    g.set_ylabels('Number of Planets Discoverd')
+```
+
+- http://seaborn.pydata.org/
+- http://seaborn.pydata.org/tutorial.html
+- http://seaborn.pydata.org/examples/index.html
+
+### 4.16.3 事例: マラソンのゴール時間の調査
+
+```shell
+$ curl -O https://raw.githubusercontent.com/jakevdp/marathon-data/master/marathon-data.csv
+```
+
+```python
+data = pd.read_csv('marathon-data.csv')
+data.head()
+data.dtypes
+
+def convert_time(s):
+    h, m, s = map(int, s.split(':'))
+    return pd.datetools.timedelta(hours=h, minutes=m, seconds=s) # <- 動かない
+
+data = pd.read_csv('/Users/nep/Takeshima/Test/marathon-data.csv',
+    converters={'split': convert_time, 'final': convert_time})
+
+# 時間を秒単位で示す列を追加
+data['split_sec'] = data['split'].astype(int) / 1E9
+data['final_sec'] = data['final'].astype(int) / 1E9
+data.head()
+
+# jointplot で確認
+with sns.axes_style('white'):
+    g = sns.jointplot('split_sec', 'final_sec', data, kind='hex')
+    g.ax_joint.plot(
+        np.linspace(4000, 16000),
+        np.linspace(8000, 32000),
+        'k'
+    )
+
+data['split_frac'] = 1 - 2 * data['split_sec'] / data['final_sec']
+data.head()
+
+sns.distplot(data['split_frac'], kde=False)
+plt.axvline(0, color='k', linestyle='--')
+
+sum(data.split_frac < 0)
+
+g = sns.PairGrid(data, vars=['age', 'split_sec', 'final_sec', 'split_frac'],
+    hue='gender', palette='RdBu_r')
+g.map(plt.scatter, alpha=0.8)
+g.add_legend()
+```
+
+```python
+sns.kdeplot(data.split_frac[data.gender=='M'], label='men', shade=True)
+sns.kdeplot(data.split_frac[data.gender=='W'], label='women', shade=True)
+plt.xlabel('split_frac')
+```
+
+```python
+sns.violinplot('gender', 'split_frac', data=data, palette=['lightblue', 'lightpink'])
+```
+
+```python
+data['age_dec'] = data.age.map(lambda age: 10 * (age // 10))
+data.head()
+```
+
+```python
+men = (data.gender == 'M')
+women = (data.gender == 'W')
+
+with sns.axes_style(style=None):
+    sns.violinplot('age_dec', 'split_frac', hue='gender', data=data,
+        split=True, inner='quartile', palette=['lightblue', 'lightpink'])
+```
+
+```python
+(data.age > 80).sum()
+```
+
+```python
+g = sns.lmplot('final_sec', 'split_frac', col='gender', data=data,
+    markers='.', scatter_kwd=dict(color='c'))
+g.map(plt.axhline, y=0.1, color='k', ls=':')
+```
+
+## 4.17 その他のリソース
+### 4.17.1 Matplotlibリソース
+
+### 4.17.2 その他のPython用グラフィックライブラリ
+- [Bokeh](https://docs.bokeh.org/en/latest/)
+- [Plotly](https://plot.ly/)
+- [Vispy](https://vispy.org/)
+- [Vega](https://vega.github.io/)
