@@ -1,4 +1,5 @@
 # 2. NumPy の基礎
+- [リファレンス日本語](https://code-examples.net/ja/docs/numpy~1.17/index)
 
 ```python
 import numpy
@@ -815,3 +816,388 @@ print('Rainy days with < 0.1 inches:', np.sum((inches > 0) & (inches < 0.2)))
 
 ### 2.6.4 マスクとしてのブール値配列
 
+```python
+# ブール値配列を得るのは簡単です
+x < 5
+
+# 配列からこれらの値を洗濯するには, このブール値配列をインデクスとして指定するだけです
+# これはマスキング操作としてしられています
+x[x < 5]
+```
+
+```python
+# 降雨日すべてのマスクを作る
+rainy = (inches > 0)
+
+# 夏季を表すマスクを作る（6月21日は172日目）
+summer = (np.arange(365) - 172 < 90) & (np.arange(365) - 172 > 0)
+
+print('Median precip on rainy days in 2014: ', np.median(inches[rainy])) # 2014年における降雨日の降水量中央値
+print('Median Precip on summer days in 2014: ', np.median(inches[summer])) # 2014年における夏季の降水量中央値
+print('Maximum precip on summer days in 2014:', np.max(inchies[summer])) # 2014年における夏季の最大降水量
+print('Median precip on non-summer rainy days', np.median(inches[rainy & ~summer])) # 2014年における夏季以外の日の降水量中央値
+```
+
+**キーワード and と or, 演算子 & と|**<br>
+
+```python
+bool(42), bool(0)
+(True, False)
+
+bool(42 and 0)
+False
+
+bool(42 or 0)
+True
+```
+
+```python
+bin(42)
+0b101010
+
+bin(59)
+0b111011
+
+bin(42 & 59)
+0b101010
+
+bin(42 | 59)
+0b111011
+```
+
+```python
+A = np.array([1,0,1,0,1,0], dtype=bool)
+B = np.array([1,1,1,0,1,1], dtype=bool)
+A | B
+array([True, True, True, False, True, True])
+
+# or を使用すると, 配列オブジェクト全体の真偽を評価しようとします
+A or B
+# エラー
+
+# 配列に対してブール式を実行するときは, or や and の代わりに | や & を使用します
+x = np.arange(10)
+(x > 4) & (x < 8)
+
+# 次の場合はエラーになります
+(x > 4) and (x < 8)
+```
+
+## 2.7 ファンシーインデクス
+### 2.7.1 ファンシーインデクスの調査
+ファンシーインデクスの概念は単純です. インデクスの配列を渡して, 複数の配列要素に同時にアクセスします.
+
+```python
+import numpy as np
+rand = np.random.RandomState(42)
+
+x = rand.randint(100, size=10)
+
+# 通常のインデクス
+[x[3], x[7], x[2]]
+
+# ファンシーインデクス
+ind = [3,7,4]
+x[ind]
+
+# ファンシーインデクスを使うと, 元の配列の形状ではなく, インデクス配列の形状が反映されます
+ind = np.array([[3,7], [4,5]])
+x[ind]
+```
+
+```python
+# 配列が複数の次元の場合
+X = np.arange(12).reshape((3, 4))
+
+row = np.array([0,1,2])
+col = np.array([2,1,3])
+X[row, col]
+
+# インデクス内に列ベクトルと行ベクトルを組み合わせると, 結果は２次元の配列となります
+X[row[:, np.newaxis], col]
+
+row[: np.newaxis] * col
+```
+
+### 2.7.2 インデクスの組み合わせ
+
+```python
+# ファンシーインデクスと単純なインデクスの組み合わせ
+X[2, [2, 0, 1]] #行2の列2,0,1
+
+# ファンシーインデクスとスライスの組み合わせ
+X[1:, [2, 0, 1]] # 行1以降の列2,0,1
+
+# ファンシーインデクスとマスクの組み合わせ
+mask = np.array([1,0,1,0], dtype=bool)
+X[row[:, np.newaxis], mask]
+```
+
+### 2.7.3 事例: ランダムポイントの選択
+ファンシーインデクスの一般的な使用法の一つが, 行列から行のサブセットを選択することです.
+
+```python
+mean = [0, 0]
+cov = [[1, 2], [2, 5]]
+X = rand.multivariate_normal(mean, cov, 100)
+X.shape
+```
+
+```python
+%matplotlib inline
+import matplotlib.pyplot as plt
+import seaborn; seaborn.set()
+
+plt.scatter(X[:, 0], X[:, 1])
+```
+
+```python
+indices = np.random.choice(X.shape[0], 20, replace=False)
+indices
+
+selection = X[indices]
+selection.shape
+
+plt.scatter(X[:, 0], X[:, 1], alpha=0.3)
+plt.scatter(selection[:, 0], selection[:, 1], facecolor='none', s=200, edgecolor='black')
+```
+
+### 2.7.4 ファンシーインデクスを使った値の変更
+
+```python
+x = np.arange(10)
+i = np.array([2, 1, 8, 4])
+x[i] = 99 # 該当する要素を 99 に変更
+x[i] -= 10 # 該当する要素から 10 を引く
+```
+
+```python
+# 予期しない結果が生じる可能性
+# 例1
+x = np.zeros(10)
+x[[0, 0]] = [4, 6]
+
+# 例2
+i = [2,3,3,4,4,4]
+x[i] += 1
+
+# 繰り返された操作のそれぞれで特定の動作を行たい場合は ufuncs の at() を使う
+x = np.zeros(10)
+np.add.at(x, i, 1)
+```
+
+### 2.7.5 事例: データのビニング
+
+```python
+# 1000個のビンがあり, どのビンに属するのか素早く見つけたい
+x = np.random.randn(100)
+
+# 手作業でヒストグラムを作成する
+bins = np.linspace(-5, 5, 20)
+counts = np.zeros_like(bins)
+
+# 各xに対して, 適切なビンを選択する
+i = np.searchsorted(bins, x)
+
+# それらのビンに1を加える
+np.add.at(counts, i, 1)
+
+# 結果をプロットする
+plt.plot(bins, counts, linestyle='steps')
+```
+
+## 2.8 配列のソート
+
+- 挿入ソート
+- 選択ソート
+- マージソート
+- クイックソート
+- バブルソート
+
+```python
+impott numpy as np
+
+def selection_sort (x):
+    for i in range(len(x)):
+        swap = i + np.argmin(x[i:])
+        (x[i], x[swap]) = (x[swap], x[i])
+    return x
+
+x = np.array([2,1,4,3,5])
+selection_sort(x)
+```
+
+```python
+def bogosort(x):
+    while np.any(x[:-1] > x[1:]):
+        np.random.shuffle(x)
+    return x
+
+x = np.array([2,1,4,3,5])
+bogosort(x)
+```
+
+### 2.8.1 NumPy の拘束ソート: np.sort と np.argsort
+
+```python
+# 元の配列を変更せず, ソートされた配列を得るには, np.sort を使用します
+x = np.array([2,1,4,3,5])
+np.sort(x)
+
+# 配列自体を変更したければ, 配列の sort メソッドを呼び出します
+x.sort()
+x
+
+# argsort関数はソートされた要素のインデクスを返します
+x = np.array([2,1,4,3,5])
+i = np.argsort(x)
+x[i]
+```
+
+#### 2.8.1.1 行または列に沿ったソート
+axis引数を使用して多次元配列の特定の行または列に沿ってソートする機能があります
+
+```python
+rand = np.random.RandomState(42)
+X = rand.randint(0, 10, (4, 6))
+
+# 配列Xの各列をソートする
+np.sort(X, axis=0)
+
+# 配列Xの各行をソートする
+np.sort(X, axis=1)
+```
+
+### 2.8.2 部分ソート: 分割（パーティショニング）
+np.partition, npargpartition
+
+```python
+# 配列内のK個の最小値を探したい
+
+x = np.array([7,2,3,1,6,5,4])
+np.partition(x, 3) # 配列xのうち3個の最小値を探す
+# array([2,1,3,4,6,5,7]) # 最初の３つの値は, 元の配列内の最小値
+
+np.partition(X, 2, axis=1)
+```
+
+### 2.8.3 事例: k近傍法
+
+```python
+X = rand.rand(10, 2)
+
+%matplotlib inline
+import matplotlib.pyplot as plt
+import seaborn; seaborn.set()
+
+plt.scatter(X[:, 0], X[:, 1], s=100)
+
+# 各点の組み合わせに対して, 座標ごとの差を計算する
+dist_sq = np.sum((X[:, np.newaxis, :] - X[np.newaxis, :, :]) ** 2, axis=-1)
+differences = X[:, np.newaxis, :] - X[np.newaxis, :, :]
+differences.shape
+
+# 差を2乗する
+sq_differences = differences ** 2
+sq_differences.shape
+
+# 差の２乗を合計して, ２乗距離を求める
+dist_sq = sq_differences.sum(-1)
+dist_sq.shape
+
+# この行列の対角線（各点とそれ自身の間の距離）がすべてゼロであることを確認する
+dist_sq.diagonal()
+
+nearest = np.argsort(dist_sq, axis=1)
+print(nearest)
+
+# K個の最近傍に興味がある場合
+# k + 1個の最小２乗距離が前方になるよう分割
+K = 2
+nearest_partition = np.argpartition(dist_sq, K + 1, axis=1)
+
+plt.scatter(X[:, 0], X[:, 1], s=100)
+
+K = 2
+for i in range(X.shape[0]):
+    for j in nearest_partition[i, :K+1]:
+        # X[i]からX[j]への線を描くために zpi を使ったトリックを使用する
+        plt.plot(*zip(X[j], X[i]), color='black')
+```
+
+## 2.9 構造化データ: NumPy の構造化配列
+構造化配列とレコード配列を使用して, 複合型の異種データを効率的に格納する方法
+
+```python
+import numpy as np
+
+name = ['Alice', 'Bob', 'Cathy', 'Doug']
+age = [25, 45, 37, 19]
+weight = [55.0, 85.5, 68.0, 61.5]
+
+# これはあまりいい方法ではありません
+```
+
+```python
+# 構造化配列のために複合データ型を使う
+data = np.zeros(4, dtype={
+    'names': ('name', 'age', 'weight'),
+    'formats': ('U10', 'i4', 'f8')
+})
+print(data.dtype)
+
+data['name'] = name
+data['age'] = age
+data['weight'] = weight
+print(data)
+
+# すべての name を表示する
+data['name']
+
+# 最初の行を表示する
+data[0]
+
+# 最後の行の name を表示する
+data[-1]['name']
+
+# ageが30以下 name を表示する
+data[data['age'] < 30]['name']
+```
+
+### 2.9.1 構造化配列の作成
+
+```python
+np.dtype({
+    'names': ('name', 'age', 'weight'),
+    'formats': ('U10', 'i4', 'f8')
+})
+
+np.dtype({
+    'names': ('name', 'age', 'weight'),
+    'formats': ((np.str_, 10), int, np.float32)
+})
+
+np.dtype([('name', 'S10'), ('age', 'i4'), ('weight', 'f8')])
+
+np.dtype('S10,i4,f8')
+```
+
+<img src="numpy_dtype.png" width="600">
+
+### 2.9.2 より高度な複合型
+
+```python
+tp = np.dtype([('id', 'i8'), ('mat', 'f8', (3, 3))])
+X = np.zeros(1, dtype=tp)
+print(X[0])
+print(X['mat'][0])
+```
+
+
+### 2.9.3 RecordArrays: 構造化配列の変形版
+
+```python
+data_rec = data.view(np.recarray)
+data_rec.age
+```
+### 2.9.4 pandasへ
