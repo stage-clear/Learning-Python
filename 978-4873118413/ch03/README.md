@@ -343,7 +343,119 @@ data[data.density > 50]
 import pandas as pd
 import numpy as np
 
-rng = np.random.randomState
+rng = np.random.RandomState(42)
+ser = pd.Series(rng.randint(0, 10, 4))
+ser
+
+
+df = pd.DataFrame(rng.randint(0, 10, (3, 4)), columns=['A', 'B', 'C', 'D'])
+df
+
+# これらのオブジェクトにNumPy ufuncを適用すると, 結果はインデクスが保存された別のpandasオブジェクトになります
+
+np.exp(ser)
+np.sin(df * np.pi / 4)
 ```
 
+### 3.4.2 ufunc: インデクスの整列
+２つの異なるデータソースを結合し, 米国の面積上位3つの州と 人口上位3つの州を検索する
 
+```python
+area = pd.Series({
+    'Alaska':  172337,
+    'Texas': 695662,
+    'California': 423697
+}, name='area')
+
+population = pd.Series({
+    'California': 38332521,
+    'Texas': 26448193,
+    'New York': 19651127
+}, name='population')
+
+population / area
+# 結果の配列は, 和集合で構成されます
+
+area.index | population.index
+```
+
+```python
+A = pd.Series([2,4,6], index=[0,1,2])
+B = pd.Series([1,3,5], index=[1,2,3])
+A + B
+
+# 欠損値を埋める値を明示的に指定することができます
+A.add(B, fill_value=0)
+```
+
+#### 3.4.2.2 DataFrame オブジェクトのインデクス整列
+
+```python
+A = pd.DataFrame(rng.randint(0, 20, (2, 2)), columns=list('AB'))
+B = pd.DataFrame(rng.randint(0, 10, (3, 3)), columns=list('BAC'))
+A + B # この結果には欠損値がある
+
+fill = A.stack().mean()
+A.add(B, fill_value=fill)
+```
+
+### 3.4.3 ufunc: DataFrameとSeriesの演算
+DataFrameとSeries間で操作を実行する場合, インデクスと列の配置も同時に維持されます
+
+```python
+# 2次元配列と, その中の1行との差を計算します
+A = rng.randint(10, size=(3, 4))
+A
+
+A - A[0]
+```
+
+NumPy のブロードキャストルールによると, 2次元配列とその中の1行との減算は, 行単位で行われます.
+
+```python
+df = pd.DataFrame(A, columns=list('QRST'))
+df - df.iloc[0]
+# pandas でもデフォルトでは行単位で計算が行われます
+
+# 列単位で操作する場合は, axisキーワードを指定することで可能になります
+df.subtract(df['R'], axis=0)
+
+# DataFrame と Series との操作は, 2つの要素間のインデクスが自動的に揃えられます
+halfrow = df.iloc[0, ::2]
+halfrow
+
+df - halfrow
+```
+
+## 3.5 欠損値の扱い
+欠落しているデータを一般的に **null値**, **NaN値**, または **NA値**と呼びます.
+
+### 3.5.1 欠損値表現のトレードオフ
+
+### 3.5.2 pandas の欠損値
+
+### 3.5.2.1 None: Pythonの欠損値
+
+```python
+import numpy as np
+import pandas as pd
+
+vals1 = np.array([1, None, 3, 4])
+vals1
+```
+
+#### 3.5.2.2 NaN: 数値データの欠損値
+
+```python
+vals2 = np.array([1, np.nan, 3, 4])
+vals2.dtype
+
+# NaNはデータに対する一種のウイルスのようなもので, 他のあらゆるオブジェクトに感染します.
+# つまり, 演算に関係なくNaNをしようした　算術演算の結果は, NaNになります
+vals2.sum(), vals2.min(), vals2.max()
+
+# NumPy はこれらの欠損値を無視する特別な集約手段を提供しています
+np.nansum(vals2), np.nanmin(vals2), np.nanmax(vals2)
+```
+
+#### 3.5.2.3 pandas における NaN と None
