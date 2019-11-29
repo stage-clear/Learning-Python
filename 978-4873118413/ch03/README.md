@@ -459,3 +459,120 @@ np.nansum(vals2), np.nanmin(vals2), np.nanmax(vals2)
 ```
 
 #### 3.5.2.3 pandas における NaN と None
+
+```python
+pd.Series([1, np.nan, 2, None])
+
+x = pd.Series(range(2), dtype=int)
+x
+
+x[0] = None
+x
+# None は自動的にNaNに変換saremasu
+```
+
+### 3.5.3 null値が存在する場合の処理
+
+null値を検出, 削除, および置換するための有用なメソッドがいくつかあります
+
+- isnull() - 欠損値の存在を示すブール値マスク配列を作成する
+- notnull() - isnull() の逆
+- dropna() - データから欠損値を取り除いたデーターを作る
+- fillna() - 不足している要素に値を埋め込んだデータのコピーを返す
+
+#### 3.5.3.1 null値の検出
+isnull(), notnull()
+
+```python
+data = pd.Series([1, np.nan, 'hello', None])
+data.isnull()
+data[data.notnull()]
+```
+
+#### 3.5.3.2 欠損値の除外
+dropna(), fillna()
+
+```python
+data.dropna()
+```
+
+```python
+df = pd.DataFrame([
+  [1, np.nan, 2],
+  [2, 3, 5],
+  [np.nan, 4, 6]
+])
+
+df.dropna()
+# dropna() は null値が存在するすべての行を削除します
+
+df.dropna(axis='columns')
+```
+
+```python
+df[3] = np.nan
+df
+
+# how='all' を指定することで, すべての要素がnull値である行/列のみが削除されます
+df.dropna(axis='columns', how='all')
+
+# threshパラメータを使用して, 行または列を維持するためのnull以外の値の最小個数を指定できます
+# (null値以外の要素がN個以上ある)
+df.dropna(axis='rows', thresh=3)
+```
+
+#### 3.5.3.3 欠損値への値設定
+
+```python
+data = pd.Series([1, np.nan, 2, None, 3], index=list('abcde'))
+data
+
+# 欠損値を0で埋める
+data.fillna(0)
+
+# 欠損値を, 欠損値の一つ前の値を埋める（forward fill）
+data.fillna(method='ffill')
+
+# 欠損値を, 欠損値の一つ後ろの値を埋める（back fill）
+data.fillna(method='bfill')
+```
+
+```python
+df
+
+df.fillna(method='ffill', axis=1)
+```
+
+forward fill を行う際に前の値が利用できない場合, NA値が残る点に注意が必要です
+
+## 3.6 階層型インデクス
+
+```python
+import pandas as pd
+import numpy as np
+```
+
+### 3.6.1 多重インデクスを持つSeries
+1次元のSeriesで2次元データを表現する方法
+
+#### 3.6.1.1 誤った手法
+
+```python
+index = [
+    ('California', 2000),
+    ('California', 2010),
+    ('New York', 2000),
+    ('New York', 2010),
+    ('Texas', 2000),
+    ('Texas', 2010)
+]
+populations = [
+    33871648,
+    37253956,
+    18976457,
+    19378102,
+    20185182,
+    25145561,
+]
+pop = pd.Series(populations, index=index)
+```
