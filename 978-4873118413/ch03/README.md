@@ -575,4 +575,65 @@ populations = [
     25145561,
 ]
 pop = pd.Series(populations, index=index)
+
+pop[('California', 2010):('Texas', 2000)]
 ```
+
+```python
+pop[[i for i in pop.index if i[1] == 2010]]
+```
+
+#### 3.6.1.2 より良い手法: MultiIndex
+
+```python
+index = pd.MultiIndex.from_tuples(index)
+index
+```
+
+```python
+pop = pop.reindex(index)
+pop
+```
+
+```
+# この結果は, 指定したキーを１つだけ持つインデクス付き配列になります
+pop[:, 2010]
+```
+
+#### 3.6.1.3 多次元に対する MultiIndex
+unstack() メソッドは, 多重インデクスを使ったSeriesを, 一般的なインデクス付きDataFrameに変換します.
+
+```python
+pop_df = pop.unstack()
+pop_df
+```
+
+もちろん stack() メソッドは逆の操作を行います.
+
+```python
+pop_df.stack()
+```
+
+多重インデクスを使えば１次元のSeries内で２次元を表せるように, SeriesやDataFrameで３次元以上のデータを表せるからです
+
+```python
+pop_df = pd.DataFrame({
+    'total': pop,
+    'under18': [
+        9267089, 9284094,
+        4689743, 4318033,
+        5906301, 6879014
+    ]
+})
+```
+
+### 3.6.2 MultiIndex の作成方法
+
+```python
+df = pd.DataFrame(
+    np.random.rand(4, 2),
+    index=[['a', 'a', 'b', 'b'], [1, 2, 1, 2]],
+    columns=['data1', 'data2']
+)
+```
+
