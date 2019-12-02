@@ -637,3 +637,385 @@ df = pd.DataFrame(
 )
 ```
 
+### 3.6.2.1 明示的なMultiIndexの作成
+pd.MultiIndex
+
+```python
+# 配列のリストから MultiIndex を作成
+pd.MultiIndex.from_arrays([['a', 'a', 'b', 'b'], [1, 2, 1, 2]])
+
+# タプルのリストから MultiIndex を作成
+pd.MultiIndex.from_tuples([('a', 1), ('a', 2), ('b', 1), ('b', 2)])
+
+# それぞれのインデクスのデカルト積から MultiIndex を作成
+pd.MultiIndex.from_product([['a', 'b'], [1, 2]])
+```
+
+#### 3.6.2.2 MultiIndexのレベル名
+names引数を渡すか, sakuseigoniインデクスのnames属性を設定する
+
+```python
+pop.index.names = ['state', 'year']
+```
+
+#### 3.6.2.3 列に対するMultiIndex
+
+```python
+# 階層化した列とインデクス
+index = pd.MultiIndex.from_product([[2013, 2014], [1, 2]], names=['year', 'visit'])
+columns = pd.MultiIndex.from_product([['Bob', 'Guido', 'Sue'], ['HR', 'Temp']], names=['subject', 'type'])
+
+# データは適当に埋める
+data = np.round(np.random.randn(4, 6), 1)
+data[:, ::2] *= 10
+data += 37
+
+# DataFrame の作成
+health_data = pd.DataFrame(data, index=index, columns=columns)
+health_data
+```
+
+### 3.6.3 MultiIndex のインデクス指定とスライス
+#### 3.6.3.1 多重インデクスSeries
+
+```python
+pop['California', 2000]
+
+pop['California']
+
+pop[:, 2000]
+
+pop[pop > 2200000]
+
+pop[['California', 'Texas']]
+```
+
+#### 3.6.2.2 多重インデクスDataFrame
+DataFrameでは列が優先され, 多重インデクス付きSeriesで使用した構文は列に適用されることに注意してください
+
+```python
+health_data
+
+health_data['Guido', 'HR']
+
+# loc, iloc を使用することもできます
+health_data.iloc[:2, :2]
+
+# loc, iloc はタプルを使って複数のインデクスを指定できます
+health_data.loc[:, ('Bob', 'HR')]
+
+# タプル内のインデクスにはスライスを指定できません
+health_data.loc[(:, 1), (:, 'HR')] # 構文エラー
+
+# 
+idx = pd.IndexSlice
+health_data.loc[idx[:, 1], idx[:, 'HR']]
+```
+
+### 3.6.4 多重インデクスの並べ替え
+
+```python
+index = pd.MultiIndex.from_product([['a', 'c', 'b'], [1, 2]])
+data = pd.Series(np.random.rand(6), index=index)
+data.index.names = ['char', 'int']
+
+try:
+    data['a':'b']
+except KeyError as e:
+    print(type(e))
+    print(e)
+```
+
+```python
+data = data.sort_index()
+data
+```
+
+```python
+data['a':'b']
+```
+
+#### 3.6.4.2 インデクスのstackのunstack
+２次元に変換する場合, 必要に応じてレベルを指定することもできます
+
+```python
+pop.unstack(level=0)
+
+pop.unstack(level=1)
+
+# unstack()の逆操作stack()を用いて元のSeriesを復元できます
+pop.unstack().stack()
+```
+
+#### 3.6.4.3 インデクスの設定と再設定
+
+```python
+pop_flat = pop.reset_index(name='population')
+pop_flat
+```
+
+```python
+pop_flat.set_index(['state', 'year'])
+```
+
+### 3.6.5 多重インデクスに基づいたデータ集約
+mean(), sum(), max() など
+
+```python
+health_data
+
+# レベルを指定した平均
+data_mean = health_data.mean(level='year')
+data_mean
+
+# axis キーワードを使用すれば, 列レベル間での平均が得られます
+data_mean.mean(axis=1, level='type')
+```
+
+## 3.7 データセットの連結: concatとappend
+
+```python
+import pandas as pd
+import numpy as np
+```
+
+```python
+def make_df (cols, ind):
+    """DataFrameの簡易作成関数"""
+    data = {c: [str(c) + str(i) for i in ind] for c in cols}
+    return pd.DataFrame(data, ind)
+
+# サンプル DataFrame
+make_df('ABC', range(3))
+```
+
+### 3.7.1 再掲: NumPy配列の連結
+np.concatenate()
+
+```python
+x = [1,2,3]
+y = [4,5,6]
+z = [7,8,9]
+
+np.concatenate([x, y, z])
+```
+
+```python
+x = [[1,2], [3,4]]
+np.concatenate([x, x], axis=1)
+```
+
+### 3.7.2 pd.concatを使った単純な連結
+pd.concat()
+
+```python
+# pandas v0.18 の関数シグニチャ
+pd.concat(objs, axis=0, join='outer', join_axes=None, ignore_index=False,
+    keys=None, levels=None, names=None, verify_integrity=False,
+    copy=True)
+```
+
+```python
+ser1 = pd.Series(['A', 'B', 'C'], index=[1,2,3])
+ser2 = pd.Series(['D', 'E', 'F'], index=[4,5,6])
+pd.concat([ser1, ser2])
+```
+
+```python
+# DataFrameによる高次元のオブジェクトを連結
+df1 = make_df('AB', [1, 2])
+df2 = make_df('AB', [3, 4])
+print(df1)
+print(df2)
+print(pd.concat([df1, df2]))
+```
+
+```python
+# 連結が行われる軸を指定
+df3 = make_df('AB', [0, 1])
+df4 = make_df('CD', [0, 1])
+print(df3)
+print(df4)
+print(pd.concat([df3, df4], axis=1))
+```
+
+#### 3.7.2.1 インデクスの重複
+重複するインデクスを持っていても, pd.concat ではインデクスが保持される
+
+```python
+x = make_df('AB', [0, 1])
+y = make_df('AB', [2, 3])
+y.index = x.index # インデクスを重複させる
+print(x)
+print(y)
+print(pd.concat([x, y]))
+```
+
+##### 重複をエラーとして補足する
+verify_integrity フラグを指定する
+
+```python
+try:
+    pd.concat([x, y], verify_integrity=True)
+except ValueError as e:
+    print('ValueError:', e)
+```
+
+##### インデクスを無視する
+ignore_index フラグを設定する
+
+```python
+print(x)
+print(y)
+print(pd.concat([x, y], ignore_index=True))
+# 新しい整数インデクスが作成されます
+```
+
+##### MultiIndexキーを追加する
+keysオプションを使用してデータソースのラベルを指定する
+
+```python
+print(x)
+print(y)
+print(pd.concat([x, y], keys=['x', 'y']))
+```
+
+#### 3.7.2.2 joinによる連結
+
+```python
+df5 = make_df('ABC', [1, 2])
+df6 = make_df('BCD', [3, 4])
+print(df5); print(df6); print(pd.concat([df5, df6]))
+```
+
+和集合（join='outer'）, 積集合（join='inner'）
+```python
+print(df5); print(df6);
+print(pd.concat([df5, df6], join='inner'))
+```
+
+```python
+print(df5); print(df6);
+print(pd.concat([df5, df6], join_axes=[df5.columns]))
+```
+* join-axes は deprecated
+
+#### 3.7.2.3 appendメソッド
+
+```python
+print(df1); print(df2)
+print(df1.append(df2))
+```
+
+Pythonリストのappend()とextend()メソッドとは異なり, pandasのappend()メソッドは元のオブジェクトを変更せず, 結合されたデータで新しいオブジェクトを作成することに注意してください
+
+## 3.8 データセットの結合: mergeとjoin
+pandasが提供する重要な機能の１つは, 高パフォーマンスなメモリ内joinおよびmerge操作です
+
+### 3.8.1 関係代数
+
+### 3.8.2 結合の種類
+
+#### 3.8.2.1 1対１結合
+
+```python
+import pandas as pd
+import numpy as np
+```
+
+```python
+df1 = pd.DataFrame({
+    'employee': ['Bob', 'Jake', 'Lisa', 'Sue'],
+    'group': ['Accounting', 'Engineering', 'Engineering', 'HR']
+})
+df2 = pd.DataFrame({
+    'employee': ['Lisa', 'Bob', 'Jake', 'Sue'],
+    'hire_date': [2004, 2008, 2012, 2014]
+})
+
+print(df1)
+print(df2)
+```
+
+```
+df3 = pd.merge(df1, df2)
+df3
+```
+
+#### 3.8.2.2 多対1結合
+
+```python
+df4 = pd.DataFrame({
+    'group': ['Accounting', 'Engineering', 'HR'],
+    'supervisor': ['Carly', 'Guido', 'Steve']
+})
+
+print(df3); print(df4);
+print(pd.merge(df3, df4))
+```
+
+#### 3.8.2.3 多対多結合
+
+```python
+df5 = pd.DataFrame({
+    'group': ['Accounting', 'Accounting', 'Engineering', 'Engineering', 'HR', 'HR'],
+    'skills': ['math', 'spreadsheets', 'coding', 'linux', 'spreadsheets', 'organization']
+})
+
+print(df1); print(df5);
+print(pd.merge(df1, df5))
+```
+
+### 3.8.3 キーの指定
+列名が一致しないこともしばしば発生します。
+pd.merge() はこれを扱うためのさまざまなオプションを提供します
+
+#### 3.8.3.1 onキーワード
+列名または列名リストを与えてキーを明示的に指定する
+
+```python
+print(pd.merge(df1, df2, on='employee'))
+```
+
+#### left_on キーワードと right_on キーワード
+
+```python
+df3 = pd.DataFrame({
+    'name': ['Bob', 'Jake', 'Lisa', 'Sue'],
+    'salary': [70000, 80000, 120000, 90000]
+})
+print(df1); print(df3)
+print(pd.merge(df1, df3, left_on='employee', right_on='name'))
+# 左の employee と右の name でデータを一致させる
+```
+
+```python
+pd.merge(df1, df3, left_on='employee', right_on='name').drop('name', axis=1)
+# drop() メソッドで列を削除できます
+```
+
+### 3.8.3.3 left_index キーワードと right_index キーワード
+列を結合するのではなく, インデクスを結合する
+
+```python
+df1a = df1.set_index('employee')
+df2a = df2.set_index('employee')
+print(df1a); print(df2a)
+```
+
+```python
+print(pd.merge(df1a, df2a, left_index=True, right_index=True))
+```
+
+利便性のために, DataFrameはデフォルトでインデクスをキーとして結合を実行する join() メソッドを提供しています
+```python
+print(df1a.join(df2a))
+```
+
+left_index と right_on または left_on と right_index を組み合わせれば, インデクスと列の混在した指定が可能です
+
+```python
+print(pd.merge(df1a, df3, left_index=True, right_on='name'))
+```
+
+### 3.8.4 結合に対する集合演算の指定
