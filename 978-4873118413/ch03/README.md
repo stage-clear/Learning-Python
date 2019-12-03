@@ -1019,3 +1019,213 @@ print(pd.merge(df1a, df3, left_index=True, right_on='name'))
 ```
 
 ### 3.8.4 結合に対する集合演算の指定
+
+```python
+df6 = pd.DataFrame({
+    'name': ['Peter', 'Paul', 'Mary'],
+    'food': ['fish', 'beans', 'bread']
+}, columns=['name', 'food'])
+
+df7 = pd.DataFrame({
+    'name': ['Mary', 'Joseph'],
+    'drink': ['wine', 'beer']
+}, columns=['name', 'drink'])
+
+pd.merge(df6, df7, how='inner')
+
+pd.merge(df6, df7, how='outer')
+```
+
+how キーワードには, 「inner」, 「outer」, 「left」, 「right」が指定できます
+
+```python
+pd.merge(df6, df7, how='left')
+
+pd.merge(df6, df7, how='right')
+```
+
+### 3.8.5 列名の重複: suffixes キーワード
+
+```python
+df8 = pd.DataFrame({
+    'name': ['Bob', 'Jake', 'Lisa', 'Sue'],
+    'rank': [1, 2, 3, 4]
+})
+
+df9 = pd.DataFrame({
+    'name': ['Bob', 'Jake', 'Lisa', 'Sue'],
+    'rank': [3, 1, 4, 2]
+})
+
+pd.merge(df8, df9, on='name')
+# 競合する列名があるため, merge関数は接尾辞 _x または _y を自動的に付加します
+
+# suffixes を使用して接尾辞を指定することができます
+pd.merge(df8, df9, on='name', suffixes=['_L', '_R'])
+```
+
+### 3.8.6 事例: 米国州データ
+
+```python
+pop = pd.read_csv('state-population.csv')
+areas = pd.read_csv('state-areas.csv')
+abbrevs = pd.read_csv('state-abbrevs.cs ')
+
+pop.head()
+areas.head()
+abbrevs.head()
+
+merged = pd.merge(pop, abbrevs, how='outer', left_on='state/region', right_on='abbreviation')
+merged = merged.drop('abbreviation', 1) # 重複を削除
+merged.head()
+
+# 不一致があったかどうか null 値を持つ行を探す
+merged.isnull().any()
+
+# population には一部 null がありました
+# 詳しく見てみます
+merged[merged['population'].isnull()].head()
+
+# abbrevs が欠けているかを探します
+merged.loc[merged['state'].isnull(), 'state/region'].unique()
+
+merged.loc[merged['state/region'] == 'PR', 'state'] = 'Puerto Rico'
+merged.loc[merged['state/region'] == 'USA', 'state'] = 'United States'
+merged.isnull().any()
+
+# state 
+final = pd.merge(merged, areas, on='state', how='left')
+final.head()
+
+# 
+final.isnull().any()
+final['state'][final['area (sq. mi)'].isnull()].unique()
+
+# null値を削除する
+final.dropna(inplace=True)
+
+final.head()
+```
+
+```python
+data2010 = final.query("year == 2010 & ages == 'total'")
+data2010.head()
+
+data2010.set_index('state', inplace=True)
+density = data2010['population'] / data2010['area (sq. mi)']
+
+density.sort_values(ascending=False, inplace=True)
+density.head()
+density.tail()
+```
+
+## 3.9 集約とグループ化
+
+### 3.9.1 惑星データ
+
+```python
+import pandas as pd
+import numpy as np
+import seaborn as sns
+planets = sns.load_dataset('planets')
+planets.shape
+
+planets.head()
+```
+
+```python
+rng = np.random.RandomState(42)
+ser = pd.Series(rng.rand(5))
+ser
+
+ser.sum()
+
+ser.mean()
+```
+
+```python
+# DataFrame の場合, デフォルトでは結果が列ごとに得られます
+df = pd.DataFrame({
+    'A': rng.rand(5),
+    'B': rng.rand(5)
+})
+df
+
+df.mean()
+df.mean(axis='columns')
+```
+
+describe()メソッドは各列の様々な集約結果を返します
+
+```python
+planets.dropna().describe()
+```
+
+**pandasの集約メソッド**<br>
+
+|集約メソッド|説明|
+|:-|:-|
+|count()|要素数|
+|first(), last()|最初の要素, 最後の要素|
+|mean(), median()|平均値, 中央値|
+|min(), max()|最小値, 最大値|
+|std(), var()|標準偏差, 分散|
+|mad()|平均絶対偏差|
+|prod()|全要素の積|
+|sum()|総計|
+
+### 3.9.3 GroupBy: 分割, 適用, 結合
+- 分割 split
+- 適用 Apply
+- 結合 Combine
+
+#### 3.9.3.1 分割, 適用, 結合
+
+```python
+df = pd.DataFrame({
+    'key': ['A', 'B', 'C', 'A', 'B', 'C'],
+    'data': range(6)
+}, columns=['key', 'data'])
+
+df.groupby('key')
+df.groupby('key').sum()
+```
+
+#### 3.9.3.2 GroupBy オブジェクト
+おそらく, GroupBy により可能となる操作の中で最も重要なのは, 集約(aggregate), フィルタ(filter), 変換(transform), 適用(apply)です
+
+```python
+planets.groupby('method')
+
+planets.groupby('method')['orbital_period']
+
+planets.groupby('method')['orbital_period'].median()
+```
+
+##### グループごとの繰り返し
+
+```python
+for (method, group) in planets.groupby('method'):
+    print("{0:30s} shape={1}".format(method, group.shape))
+```
+
+##### メソッド呼び出し
+
+```python
+planets.groupby('method')['year'].describe().unstack()
+```
+
+#### 3.9.3.3 集約, フィルタ, 変換, 適用
+
+```python
+rng = np.random.RandomState(0)
+
+df = pd.DataFrame({
+    'key': ['A', 'B', 'C', 'A', 'B', 'C'],
+    'data1': range(6),
+    'data2': rng.randint(0, 10, 6)
+}, columns=['key', 'data1', 'data2'])
+```
+
+##### 集約
+
