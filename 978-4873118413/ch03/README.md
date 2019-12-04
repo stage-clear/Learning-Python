@@ -1229,3 +1229,309 @@ df = pd.DataFrame({
 
 ##### 集約
 
+```python
+df.groupby('key').aggregate(['min', np.median, max])
+```
+
+```python
+df.groupby('key').aggregate({
+    'data1': 'min',
+    'data2': 'max'
+})
+```
+
+##### フィルタ
+```python
+def filter_func (x):
+    return x['data2'].std() > 4
+
+print(df); print(df.groupby('key').std());
+print(df.groupby('key').filter(filter_func))
+```
+
+##### 変換
+
+```python
+df.groupby('key').transform(lambda x: x - x.mean())
+```
+
+##### 適用
+
+```python
+def norm_by_data2 (x):
+    # x は group ごと DataFrameオブジェクト
+    x['data1'] /= x['data2'].sum()
+    return x
+
+print(df); print(df.groupby('key').apply(norm_by_data2))
+```
+
+#### 3.9.3.4 分割キーの指定
+グループ指定を行うその他の手段
+
+##### リスト, Series, Indexによるグループキーの指定
+```python
+L = [0, 1, 0, 1, 2, 0]
+print(df); print(df.groupby(L).sum())
+
+print(df); print(df.groupby(df['key']).sum())
+```
+
+##### index をグループにマップする Series および辞書
+
+```python
+df2 = df.set_index('key')
+mapping = {
+    'A': 'vowel',
+    'B': 'consonant',
+    'C': 'consonant'
+}
+print(df2); print(df2.groupby(mapping).sum())
+```
+
+##### Python関数
+マップと同様に, Index値を入力してグループのキーを出力する任意のPython関数を渡すことができます
+
+```python
+print(df2); print(df2.groupby(str.lower).mean())
+```
+
+###### キーのリスト
+さらに, これらの手段を組み合わせて, 多重ウインデクスのグループ化が可能です
+
+```python
+df2.groupby([str.lower, mapping]).mean()
+```
+
+#### 3.9.3.5 グループ化の例
+
+```python
+decade = 10 * (planets['year'] // 10)
+decade = decade.astype(str) + 's'
+dacade.name = 'decade'
+planets.groupby(['method', decade])['number'].sum().unstack().fillna(0)
+```
+
+## 3.10 ピボットテーブル
+ピボットテーブルは, 単純な列形式のデータを入力として受け取り, その入力を２次元の表にグループ化して, 多次元集計を行います
+ピボットテーブルは, 本質的に GroupBy 集約の多次元バージョンと考えると良いでしょう
+
+### 3.10.1 ピボットテーブルの必要性
+
+```python
+import numpy as np
+import pandas as pd
+import seaborn as sns
+titanic = sns.load_dataset('titanic')
+
+titanic.head()
+```
+
+### 3.10.2 ピボットテーブルのマニュアル作成
+
+```python
+# 性別での生存率
+titanic.groupby('sex')[['survived']].mean()
+
+# 等級と性別でグループ化して生存率を割り出す
+titanic.groupby(['sex', 'class'])['survived'].aggregate('mean').unstack()
+```
+
+### 3.10.3 ピボットテーブルの文法
+
+DataFrameの pivot_table メソッドを使用して, 先の例と同じ操作を行います.
+
+```python
+titanic.pivot_table('survived', index='sex', columns='class')
+```
+
+#### 3.10.3.1 多重ピボットテーブル
+
+```python
+# 年齢を３番目の次元とした分類を行う
+age = pd.cut(titanic['age'], [0, 18, 80])
+titanic.pivot_table('survived', ['sex', age], 'class')
+```
+
+#### 3.10.3.2 その他のピボットテーブルオプション
+
+```python
+# pandas 0.18における呼び出しシグニチャ
+DataFrame.pivot_table(data, values=None, index=None, columns=None,
+    aggfunc='mean', fill_value=None, margins=False,
+    dropna=True, margins_name='All')
+```
+
+```python
+titanic.pivot_table(index='sex', columns='class',
+    aggfunc={'survived': sum, 'fare': 'mean'})
+```
+
+```python
+# 各グループに沿った合計を加えると便利な場合があります. これは margins キーワードで指定できます
+titanic.pivot_table('survived', index='sex', columns='class', margins=True)
+```
+
+### 3.10.4 事例: 出生率データ
+
+```python
+births = pd.read_csv('births.csv')
+births.head()
+
+# decade(年代)の列を追加して, 男女の数を10年ごとにまとめます
+births['decade'] = 10 * (births['year'] // 10)
+births.pivot_table('births', index='decade', columns='gender', aggfunc='sum')
+```
+
+```python
+%matplotlib inline
+import matplotlib as plt
+sns.set()
+births.pivot_table('births', index='year', columns='gender', aggfunc='sum').plot()
+plt.ylabel('total births per year')
+```
+
+#### 3.10.4.1 さらなるデータの探索
+
+```python
+# 誤った日付や欠損値などに起因する外れ値を削除する必要があります
+# これらをすべて１度に削除する簡単な方法の１つは, シグマクリップと呼ばれる堅牢な方法で外れ値を切り取ることです
+quartiles =  np.percentile(births['births'], [25, 50, 75])
+mu = quartiles[1]
+sig = 0.74 * (quartiles[2] - quartiles[0])
+# 最後の行はサンプル平均のロバスト推定を使用しており, 0.74はガウス分布の四分位範囲から得られたものです
+
+# query()メソッドを使って, これらの値を外れた出生率の行を除外できます
+births = births.query('(births > @mu - 5 * @sig) & (births < @mu + 5 * @sig)')
+
+# day列を整数に設定する. 元はnull値の存在により文字列だった
+births['data'] = births['day'].astype(int)
+
+# 最後に, 年（year）, 月（month）, 日（day）を組み合わせた日付をインデクスとします
+births.index = pd.to_datetime(10000 * births.year + 100 * births.month + births.day, format='%Y%m%d')
+births['dayofweek'] = births.index.dayofweek
+```
+
+```python
+import matplotlib as mpl
+
+births.pivot_table('births', index='dayofweek',
+    columns='decade', aggfunc='mean').plot()
+plt.gca().set_xticklabels(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'sun'])
+plt.ylabel('mean births by day')
+```
+
+```python
+births_by_date = births.pivot_table('births', 
+    [births.index.month, births.index.day])
+births_by_date.index = [pd.datetime(2012, month, day) 
+    for (month, day) in births_by_date.index]
+
+# 結果のプロット
+fig, ax = plt.subplots(figsize=(12, 4))
+births_by_date.plot(ax=ax)
+```
+
+## 3.11 文字列操作のベクトル化
+### 3.11.1 pandas文字列操作の基礎
+
+```python
+# NumPyやpandasが算術演算を一般化して[...]
+import numpy as np
+x = np.array([2,3,5,7,11,13])
+x * 2
+```
+
+```python
+data = ['peter', 'Paul', 'MARY', 'gUIDO']
+[s.capitalize() for s in data]
+
+# 途中に欠損値がある場合処理は中断されます
+data = ['peter', 'Paul', None, 'MARY', 'gUUIDO']
+[s.capitalize() for s in data]
+
+# ベクトル化された文字列操作機能と欠落データの適切な取り扱い機能の両方を pandas は提供します
+import pandas as pd
+
+names = pd.Series(data)
+names
+
+# 欠落している値をスキップしながら, すべての文字列要素を大文字で始まる形式に変換できます
+names.str.capitalize()
+```
+
+### 3.11.2 pandas文字列操作メソッドの一覧
+
+```python
+monte = pd.Series(['Graham Chapman', 'John Cleese', 'Terry Gilliam',
+    'Eric Idle', 'Terry Jones', 'Michael Palin'])
+```
+
+#### 3.11.2.1 Python の文字列メソッドと同様のメソッド
+<img src="python_str_methods.png" width="500" height="auto"><br>
+これらにはさまざまな戻り値があることに注意してください
+
+```python
+# 文字列のSeriesを返します
+monte.str.lower()
+
+# 数値のSeriesを返します
+monte.str.len()
+
+# ブール値を返します
+monte.str.startswith('T')
+
+# 各要素に対するリストや複合値を返すものもあります
+monte.str.split()
+```
+
+#### 3.11.2.2 正規表現を使用するメソッド
+<img src="python_str_reg_methods.png" width="500" height="auto"><br>
+
+```python
+# 先頭から連続した文字を指定して, ファーストネームを抽出
+monte.str.extract('([A-Za-z]+)')
+
+# 子音で始まり子音で終わる名前
+monte.str.findall(r'^[^AEIOU].*[^aeiou]$')
+```
+
+#### 3.11.2.3 その他のメソッド
+<img src="python_str_other_methods.png" width="500" height="auto"><br>
+
+##### ベクトル化要素の取り出しとスライス
+
+```python
+monte.str[0:3]
+
+# split()とget()を組み合わせて, 最後の部分を抽出
+monte.str.split().str.get(-1)
+```
+
+##### インジケータ変数
+get_dummies()<br>
+データにある種のコード化されたインジケータを含む列があるう場合に便利です
+
+```python
+full_monte = pd.DataFrame({
+    'name': monte,
+    'info': ['B|C|D', 'B|D', 'A|C', 'B|D', 'B|C', 'B|C|D']
+})
+
+# インジケータ変数を分割して DataFrame として取り出せます
+full_monte['info'].str.get_dummies('|')
+```
+
+### 3.11.3 事例: レシピデータベース
+
+
+## 3.12 時系列
+
+## 3.13 ハイパフォーマンス pandas: eval() と query()
+
+## 3.14 参考資料
+
+
+
+
+
