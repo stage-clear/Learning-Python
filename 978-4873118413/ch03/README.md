@@ -1524,8 +1524,399 @@ full_monte['info'].str.get_dummies('|')
 
 ### 3.11.3 事例: レシピデータベース
 
+```python
+try:
+  recipes = pd.read_json('recipeitems-latest.json')
+except ValueError as e:
+  print('valueError', e)
+
+# エラー!
+```
+
+```python
+with open('recipeitems-latest.json') as f:
+    line = f.readline()
+pd.read_json(line).shape
+```
+
+```python
+# Python のリストのファイル全体を読み込む
+with open('recipeitems-latest.json') as f:
+    # 行ごとに読み込み
+    data = (line.strip() for line in f)
+    # 各行がリストの要素となるように整形する
+    data_json = '[{0}]'.format(','.join(data))
+
+# 結果をJSONとして読み込む
+recipes = pd.read_json(data_json)
+recipes.shape
+
+# レシピの一つを見てみます
+recipes.iloc[0]
+
+# 材料（ingredient）のリストを見てみます
+recipes.ingredients.str.len().describe()
+
+# 最も長い材料のリストを持つレシピは
+recipes.name[np.argmax(recipes.ingredients.str.len())]
+
+# 朝食用のレシピは
+recipes.description.str.contains('[Bb]reakfast').sum()
+
+# 材料にシナモンを使用しているレシピは
+recipes.ingredients.str.contains('[Cc]innamon').sum()
+
+# cinamon と誤った綴りにしているレシピは
+recipes.ingredients.str.contains('[Cc]inamon').sum()
+```
+
+#### 3.11.3.1 単純なレシピ推奨システム
+
+```python
+spice_list = ['salt', 'pepper', 'oregano', 'sage', 'parsley', 'rosemary', 'tarragon', 'thyme', 'paprika', 'cumin']
+```
+
+```python
+import re
+spice_df = pd.DataFrame(dict((spice, recipes.ingredients.str.contains(spice, re.IGNORECASE))
+    for spice in spice_list))
+spice_df.head()
+```
+
+```python
+# parsley, paprika, tarragon を使ったレシピを探す
+selection = spice_df.query('parsley & paprika & tarragon')
+len(selection)
+
+recipes.name[selection.index]
+```
+
+#### 3.11.3.2 さらにレシピについて
 
 ## 3.12 時系列
+- タイムスタンプは, ある特定の時刻を表します
+- 間隔と期間は, 特定の開始点と終了点の間の時間の長さを表します. Period は通常, 各区間が一定の長さであり, 重複しない時間間隔の特別な場合を表します
+- 時間差と継続時間は, 精密な時間の長さを表します
+
+### 3.12.1 Pythonの日付と時刻
+#### 3.12.1.1 Python 組み込みの日付と時刻: datetime と dateutil
+
+```python
+from datetime import datetime
+datetime(year=2015, month=7, day=4)
+```
+
+```python
+from dateutil import parser
+date = parser.parse('4th of July, 2015')
+date
+```
+
+```python
+# datetime オブジェクトを作成できれば, 曜日を取得するのも簡単です
+date.strftime('%A')
+```
+
+- https://docs.python.org/ja/3/library/datetime.html
+- https://docs.python.org/ja/3/library/datetime.html#datetime.date.strftime
+
+> 日付や時刻の巨大な配列を扱う際には, この前提が崩れます.
+> Pythonの数値リストが NumPy の数値配列と比べて効率的でないように, Pythonのdatetimeオブジェクトのリストは, コード化された日付の配列に比べて効率的ではありません.
+
+#### 3.12.1.2 時間の型付き配列: NumPy の datetime64
+
+```python
+import numpy as np
+
+date = np.array('2015-07-04', dtype=np.datetime64)
+
+# このデータが作成できれば, ベクトル化された操作を適用できます
+date + np.arange(12)
+```
+
+datetime64 および timedelta64 オブジェクトは, 基本時間単位の上に構築されています
+
+```python
+# 日付単位の datetime
+np.datetime64('2015-07-04')
+
+# 分単位の datetime
+np.datetime64('2015-07-04 12:00')
+```
+
+<img src="numpy_datetime64_formats.png" width="500" height="auto"><br>
+
+
+> datetime64データ型は, 組み込み Python datetime型の欠点に対応していますが,
+> datetime型, 特に dateutil によって提供される有益なメソッドの多くは提供されていません
+
+- https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html
+
+#### 3.12.1.3 pandasの日付と時刻: 両者のいいとこ取り
+pandas は, numpy.datetime64 のコンパクトなデータ表現とベクトル化されたインターフェースに, datetime と dateutil の使いやすさと組み合わせた
+Timestampオブジェクトを提供し, これまで説明したすべての機能を実現しています.
+
+```python
+import pandas as pd
+date = pd.to_datetime('4th of July, 2015')
+date
+
+# 曜日を取得
+date.strftime('%A')
+
+date + pd.to_timedelta(np.arange(12), 'D')
+```
+
+### 3.12.2 pandasの時系列: 時刻によるインデクス
+pandasの時系列機能が実際に有用になるのは, タイムスタンプでデータのインデクスを作成するときです
+
+```python
+index = pd.DatetimeIndex(['2014-07-04', '2014-08-04', '2015-07-04', '2015-08-04'])
+data = pd.Series([0,1,2,3], index=index)
+
+# Seriesのインデクスパターンに対して日付と解釈できるデータを渡すことができます
+data['2014-07-04':'2015-07-04']
+
+# 年を渡して当該年すべて日付スライスを取得する
+date['2015']
+```
+
+### 3.12.3 pandas の時系列データ構造
+
+- タイムスタンプ（timestamp）
+- 期間（period）
+- 時間差（time delta）または継続時間（duration）
+
+Timestamp オブジェクトと DatetimeIndex オブジェクトは直接作成することもできますが, さまざまな形式を解析できる pd.to_datetime() 関数を使用するのが一般的です
+
+```python
+dates = pd.to_datetime([
+    datetime(2015, 7, 3),
+    '4th of July, 2015',
+    '2015-Jul-6',
+    '07-07-2015',
+    '20150708'
+])
+```
+
+任意の DatetimeIndex は, 周期コードを指定した to_period() 関数を使用して PeriodIndex に変換できます
+
+```python
+dates.to_period('D')
+```
+
+TimedeltaIndex は, 例えばある日から別の日付を減じた時に作成されます
+
+```python
+dates - dates[0]
+```
+
+#### 3.12.3.1 規則的なシーケンス: pd.date_range()
+- タイムスタンプの場合: pd.date_range()
+- 期間の場合: pd.period_range()
+- 時間差の場合: pd.timedelta_range()
+
+```python
+# 開始日と終了日を指定
+# デフォルトの頻度は1日です
+pd.date_range('2015-07-05', '2015-07-10')
+
+# 開始点と期間を指定
+pd.date_range('2015-07-03', periods=8)
+
+# freq 引数で間隔を変更
+pd.date_range('2015-07-03', periods=8, freq='H')
+
+# period_range()
+pd.period_range('2015-07', periods=8, freq='M')
+
+# timedelta_range()
+pd.timedelta_range(0, periods=10, freq='H')
+```
+
+### 3.12.4 頻度とオフセット
+
+<img src="panda_freq.png" width="500" height="auto"><br>
+
+```python
+# 時（H）分（T）を組み合わせて, 2時間30分を作る
+pd.timedelta_range(0, periods=9, freq='2H30T')
+```
+
+```python
+from pandas.tseries.offsets import BDay
+pd.date_range('2015-07-01', periods=5, freq=BDay())
+```
+
+- https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
+
+### 3.12.5 再サンプリング, シフト, 窓
+
+```python
+from pandas_datareader import data
+goog = data.DataReader('GOOG', 'yahoo', start='2004', end='2016')
+```
+
+```python
+%matplotlib inline
+import matplotlib.pyplot as plt
+import seaborn; seaborn.set()
+
+goog = goog['Close']
+goog.plot()
+
+# plt.show()
+```
+
+#### 3.12.5.1 再サンプリングと頻度変換
+- resample(): データ集約
+- asfreq(): データ選択
+
+```python
+goog.plot(alpha=0.5, style='-')
+goog.resample('BA').mean().plot(style=':')
+goog.asfreq('BA').plot(style='--')
+plt.legend(['input', 'resample', 'asfreq'], loc='upper left')
+
+# resample では前年の平均, asfreq では年末の値
+```
+
+> アップサンプリング（より細かい周期でサンプリングを行う）の場合, resample()とasfreq()に大きな違いはありませんが,
+> resampleの方がより多くのオプションを用意しています
+
+```python
+fig, ax = plt.subplots(2, sharex=True)
+data = goog.iloc[:10]
+
+data.asfreq('D').plot(ax=ax[0], marker='o') # NA値のままなので表示されません
+data.asfreq('D', method='bfill').plot(ax=ax[1], style='-o') # 後方穴埋め
+data.asfreq('D', method='ffill').plot(ax=ax[1], style='--o') # 前方穴埋め
+ax[1].legend(['back-fill', 'forward-fill'])
+```
+
+#### 3.12.5.2 時間シフト
+- shift(): データをシフト
+- tshift(): インデクスをシフト
+
+```python
+fig, ax = plt.subplots(3, sharey=True)
+
+# データに頻度を適用する
+goog = goog.asfreq('D', method='pad')
+
+# 900日分の shift() と tshift() を行います
+goog.plot(ax=ax[0])
+goog.shift(900).plot(ax=ax[1])
+goog.tshift(900).plot(ax=ax[2])
+
+# 凡例と注釈
+local_max = pd.to_datetime('2007-11-05')
+offset = pd.Timedelta(900, 'D')
+
+ax[0].legend(['input'], loc=2)
+ax[0].get_xticklabels()[4].set(weight='heavy', color='red')
+ax[0].axvline(local_max, alpha=0.3, color='red')
+
+ax[1].legend(['shift(900)'], loc=2)
+ax[1].get_xticklabels()[4].set(weight='heavy', color='red')
+ax[1].axvline(local_max + offset, alpha=0.3, color='red')
+
+ax[2].legend(['tshift(900)'], loc=2)
+ax[2].get_xticklabels()[1].set(weight='heavy', color='red')
+ax[2].axvline(local_max + offset, alpha=0.3, color='red')
+```
+
+```python
+ROI = 100 * (goog.tshift(-365) / goog - 1)
+ROI.plot()
+plt.ylabel('% Return on Investment')
+```
+
+#### 3.12.5.3 移動する窓関数
+
+```python
+rolling = goog.rolling(365, center=True)
+data = pd.DataFrame({
+    'input': goog,
+    'one-year rolling_mean': rolling.mean(),
+    'one-year rolling_std': rolling.std()
+})
+ax = data.plot(style=['-', '--', ':'])
+ax.lines[0].set_alpha(0.3)
+```
+
+groupbyの例と同様に, aggregate()メソッドと apply() メソッドを使ってさまざまな移動計算を実装できます
+
+### 3.12.6 さらに学ぶために
+Wes McKinneyによる書籍「Pythonによるデータ分析入門」も優れたリソースです
+
+### 3.12.7 事例: シアトル氏の自転車数を可視化する
+
+```python
+# Date列をインデクスとして指定し, 日付の解析は pandas に行わせます
+data = pd.read_csv('/Users/nep/Takeshima/Test/FremontBridge.csv', index_col='Date', parse_dates=True)
+
+data.columns = ['West', 'East']
+data['Total'] = data.eval('West + East')
+
+data.dropna().describe()
+```
+
+#### 3.12.7.1 データの可視化
+
+```python
+%matplotlib inline
+import seaborn; seaborn.set()
+
+data.plot()
+plt.ylabel('Hourly Bicycle Count')
+```
+
+> 毎時~25,000件にも達するデータは, あまりにも密度が高いため, わかりやすくありません.
+> もっと粗い単位にデータを再サンプリングすることで, より多くの知見が得られます
+
+```python
+weekly = data.resample('W').sum()
+weekly.plot(style=[':', '--', '-'])
+plt.ylabel('Weekly bicycle count')
+```
+
+```python
+# 30日間の移動平均
+daily = data.resample('D').sum()
+daily.rolling(30, center=True).sum().plot(style=[':', '--', '-'])
+plt.ylabel('mean hourly count')
+
+# ガウス窓により平滑化した日時の自転車数
+daily.rolling(50, center=True, win_type='gaussian').sum(std=10).plot(style=[':', '--', '-'])
+```
+
+#### 3.12.7.2 データの掘り下げ
+
+```python
+# 時間帯の関数として平均通行量を見る
+by_time = data.groupby(data.index.time).mean()
+hourly_ticks = 4 * 60 * 60 * np.arange(6)
+by_time.plot(xticks=hourly_ticks, style=[':', '--', '-'])
+```
+
+```python
+# 曜日ごと
+by_weekday = data.groupby(data.index.dayofweek).mean()
+by_weekday.index = ['Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat', 'Sun']
+by_weekday.plot(style=[':', '--', '-'])
+```
+
+```python
+# 複合 groupby により平日と週末の時間別傾向をみてみます
+weekend = np.where(data.index.weekday < 5, 'Weekday', 'Weekend')
+by_time = data.groupby([weekend, data.index.time]).mean()
+
+import matplotlib.pyplot as plt
+fig, ax = plt.subplots(1, 2, figsize=(14, 5))
+by_time.ix['Weekday'].plot(ax=ax[0], title='Weekdays', xticks=hourly_ticks, style=[':', '--', '-'])
+by_time.ix['Weekend'].plot(ax=ax[1], title='Weekends', xticks=hourly_ticks, style=[':', '--', '-'])
+```
 
 ## 3.13 ハイパフォーマンス pandas: eval() と query()
 
