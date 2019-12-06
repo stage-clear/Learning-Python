@@ -1919,8 +1919,200 @@ by_time.ix['Weekend'].plot(ax=ax[1], title='Weekends', xticks=hourly_ticks, styl
 ```
 
 ## 3.13 ハイパフォーマンス pandas: eval() と query()
+### 3.13.1 query() と eval() の必要性: 複合表現
+
+```python
+# ２つの配列で要素ごとの加算
+import numpy as np
+rng = np.random.RandomState(42)
+x = rng.rand(1000000)
+y = rng.rand(1000000)
+%timeit x + y
+```
+この計算はループやリスト内包表記を用いるよりずっと高速に実行されます
+
+```python
+%timeit np.fromiter((xi + yi for xi, yi in zip(x, y)), dtype=x.dtype, count=len(x))
+```
+
+```python
+mask = (x > 0.5) & (y < 0.5)
+
+# これは次の式と等価
+tmp1 = (x > 0.5)
+tmp2 = (y < 0.5)
+mask = tmp1 & tmp2
+# 中間結果がすべて明示的にメモリに割り当てられることになります
+```
+
+[Numexpr](https://github.com/pydata/numexpr) ライブラリは中間結果の割り当てを行わずに, この種の複合表現要素を要素ごとに計算する機能を提供します.
+
+```python
+import numexpr
+mask_numexpr = numexpr.evaluate('(x > 0.5) & (y < 0.5)')
+np.allclose(mask, mask_numexpr)
+# allclose(): 2つのNumPy配列が要素ごとに近似値を持っているかを判断
+```
+
+Numexprの利点は, 中間結果を保存する一時配列を使用しない方法でこの式を評価するため, NumPyよりはるかに効率的に実行される点です.
+pandas の eval() と query() 機能は概念的に類似しており, Numexpr ライブラリを使用しています.
+
+### 3.13.2 pandas.eval() による効率的実行
+pandas の eval() 関数は文字列として与えた DataFrame の操作を効率的に実行します
+
+```python
+import pandas as pd
+nrows, ncols = 100000, 100
+rng = np.random.RandomState(42)
+df1, df2, df3, df4 = (pd.DataFrame(rng.rand(nrows, ncols)) for i in range(4))
+
+%timeit df1 + df2 + df3 + df4
+# 10 loops, best of 3: 87.1 ms per loop
+
+%timeit pd.eval('df1 + df2 + df3 + df4')
+# 10 loops, best of 3: 42.2 ms per loop
+```
+
+```python
+npallclose(df1 + df2 + df3 + df4,
+  pd.eval('df1 + df2 + df3 + df4'))
+```
+
+##### pd.eval() で使用できる操作
+pd.eval() は幅広い演算子をサポートしています
+
+```python
+df1, df2, df3, df4, df5 = (pd.DataFrame(rng.randint(0, 1000, (100, 3))) for i in range(5))
+```
+
+##### 算術演算子
+pd.eval() はすべての算術演算しをサポートします
+
+```python
+result1 = -df1 * df2 / (df3 + df4) - df5
+result2 = pd.eval('-df1 * df2 / (df3 + df4) - df5')
+np.allclose(result1, result2)
+```
+
+##### 比較演算子
+連鎖式を含め, pd.eval() はすべての比較演算子をサポートします
+
+```python
+result1 = (df1 < df2) & (df2 <= df3) & (df3 != df4)
+result2 = pd.eval('df1 < df2 <= df3 != df4')
+np.allclose(result1, result2)
+```
+
+##### ビット演算し
+pd.eval() は,  ビット演算子 & と | をサポートします
+
+```python
+result1 = (df1 < 0.5) & (df2 < 0.5) | (df3 < df4)
+result2 = pd.eval('(df1 < 0.5) & (df2 < 0.5) | (df3 < df4)')
+np.allclose(result1, result2)
+
+# and と or も 使えます
+result3 = pd.eval('(df1 < 0.5) and (df2 < 0.5) or (df3 < df4)')
+np.allclose(result1, result3)
+```
+
+##### オブジェクトの属性とインデクス
+pd.eval() は, obj.attr の形式でオブジェクトの属性にアクセスできます.
+または, obj\[index\] の形式でインデクスにもアクセスできます.
+
+```python
+result1 = df2.T[0] + df3.iloc[1]
+result2 = pd.eval('df2.T[0] + df3.iloc[1]')
+np.allclose(result1, result2)
+```
+
+##### その他の操作
+関数呼び出し, 条件分岐, ループ, その他の複雑な構文を使った操作は, 今のところ pd.eval() に実装されていません.
+こうした複雑な式を実行したい場合は, Numexprライブラリを直接使う必要があります
+
+### 3.13.3 DataFrame.eval() による列単位の操作
+eval()メソッドの利点は, 列を名前で指定できることです.
+
+```python
+df = pd.DataFrame(rng.rand(1000, 3), columns=['A', 'B', 'C'])
+df.head()
+
+result1 = (df['A'] + df['B']) / (df['C'] - 1)
+result2 = pd.eval('(df.A + df.B) / (df.C - 1)')
+np.allclose(result1, result2)
+```
+
+```python
+# pd.eval() を使うと
+result1 = ((df['A'] + df['B']) / (df['C'] - 1))
+result2 = pd.eval('(df.A + df.B) / (df.C - 1)')
+np.allclose(result1, result2)
+```
+
+```python
+result3 = df.eval('(A + B) / (C - 1)')
+np.allclose(result1, result3)
+```
+
+#### 3.13.3.1 DataFrame.eval() を使った代入
+
+```python
+# df.eval を使って新しい列Dを作成し, 他の列から計算した値を割り当てます
+df.eval('D = (A + B) / C', inplace=True)
+df.head()
+```
+
+```python
+# 既存の列の変更も同様に可能
+df.eval('D = (A - B) / C', inplace=True)
+df.head()
+```
+
+#### 3.13.3.2 DataFrame.eval() 内のローカル変数
+
+```python
+column_mean = df.mean(1)
+result1 = df['A'] + column_mean
+result2 = df.eval('A + @column_mean')
+np.allclose(result1, result2)
+```
+
+@文字は列名でなく変数名を示すために使われており, 列の名前空間およびPythonオブジェクトの名前空間という２つの「名前空間」を効率的に評価します
+
+### 3.13.4 DataFrame.query() メソッド
+
+```python
+result1 = df[(df.A < 0.5) & (df.B < 0.5)]
+result2 = pd.eval('df[(df.A < 0.5) & (df.B < 0.5)]')
+np.allclose(result1, result2)
+```
+
+```python
+result2 = df.query('A < 0.5 and B < 0.5')
+np.allclose(result1, result2)
+```
+
+```python
+Cmean = df['C'].mean()
+result1 = df[(df.A < Cmean) & (df.B < Cmean)]
+result2 = df.query('A < @Cmean and B < @Cmean')
+np.allclose(result1, result2)
+```
+
+### 3.13.5 パフォーマンス: これらの機能を使うべき場合
+
+使用可能なシステムメモリ（通常はギガバイト）と比較して大きな影響がある場合は, eval() または query() 式の使用をお勧めします
+
+```python
+# 配列のおおよそのサイズをバイト単位で確認するには
+df.values.nbytes
+```
 
 ## 3.14 参考資料
+
+- https://pandas.pydata.org/
+- Pythonによるデータ分析入門
+- [pandasタグのついた PyVideo](https://pyvideo.org/tag/pandas/)
 
 
 
