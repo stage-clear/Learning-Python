@@ -128,4 +128,74 @@ summary_df.mean()
 
 分散の別のイメージとしては面積の平均という考え方もあります
 
+#### 標準偏差 standard deviation
+分散のルートをとったばらつきの指標
 
+```python
+np.sqrt(np.var(scores, ddof=0))
+np.std(scores, ddof=0) # std関数でも同様
+```
+
+### 2.2.2 範囲と四分位範囲
+#### 範囲 range
+範囲は分散や標準偏差とは異なり、データ全体を見るのではなく、データの最大値と最小値だけでばらつきを表現する方法です
+
+```python
+np.max(scores) - np.min(scores)
+```
+
+#### 四分位範囲 interquartile range
+
+```latex
+# 公式
+IQR = Q3 - Q1
+```
+
+```python
+# 実装
+scores_Q1 = np.percentile(scores, 25)
+scores_Q3 = np.percentile(scores, 75)
+scores_IQR = scores_Q3 - scores_Q1
+scores_IQR
+```
+Q2は中央値に一致します
+
+> 分散は**平均**に対して定義されるばらつきの指標でしたが、*IQR*は**中央値**に対して定義されるばらつきの指標と解釈できます
+
+### 2.2.3 データの指標のまとめ
+> DataFrameやSeriesには describe という、ここまで扱ってきたさまざまな指標を一度に求めることができる便利なメソッドがあります
+
+```python
+pd.Series(scores).describe()
+```
+
+## 2.3 データの正規化 normalization
+データを統一的な指標に変換することを正規化といいます
+
+### 2.3.1 標準化 standardization
+データから平均を引き、標準偏差で割る操作を**標準化（standardization）**といい、
+標準化されたデータを**基準化変量（standardized data）**や**Zスコア（z-score）**といいます。
+
+```python
+z = (scores - np.mean(scores)) / np.std(scores)
+```
+
+標準化されたデータは平均が０で標準偏差が１になります
+
+```python
+np.mean(z), np.std(z, ddof=0)
+```
+
+### 2.3.2 偏差値
+**偏差値**は平均が50、標準偏差が10になるように正規化した値のことをいいます。
+
+```python
+z = 50 + 10 * (scores - np.mean(scores)) / np.std(scores)
+```
+
+```python
+scores_df['偏差値'] = z
+scores_df
+```
+
+## 2.4 １次元データの視覚化
