@@ -173,8 +173,8 @@ pd.Series(scores).describe()
 データを統一的な指標に変換することを正規化といいます
 
 ### 2.3.1 標準化 standardization
-データから平均を引き、標準偏差で割る操作を**標準化（standardization）**といい、
-標準化されたデータを**基準化変量（standardized data）**や**Zスコア（z-score）**といいます。
+データから平均を引き、標準偏差で割る操作を **標準化（standardization）** といい、
+標準化されたデータを **基準化変量（standardized data）** や **Zスコア（z-score）** といいます。
 
 ```python
 z = (scores - np.mean(scores)) / np.std(scores)
