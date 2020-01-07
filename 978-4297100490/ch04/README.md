@@ -17,10 +17,14 @@ scores[:10]
 ```
 
 ## 4.1 母集団と標本
-- 母集団 population
-- 標本 sample
-- 標本抽出 sampling
-- 推定量 estimator
-- 推定値 estimate
+- 母集団 *population*
+- 標本 *sample*
+- 標本抽出 *sampling*
+- 推定量 *estimator*
+- 推定値 *estimate*
 
 ### 4.1.1 標本の抽出方法
+
+> ランダムに標本を抽出する方法を**無作為抽出（random sampling）**といいます
+
+
