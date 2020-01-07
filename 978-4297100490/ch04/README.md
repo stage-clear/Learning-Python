@@ -25,10 +25,10 @@ scores[:10]
 
 ### 4.1.1 標本の抽出方法
 
-> ランダムに標本を抽出する方法を**無作為抽出（random sampling）**といいます
+> ランダムに標本を抽出する方法を **無作為抽出（random sampling）** といいます
 
-> 複数回同じ標本を選ぶ抽出方法を**復元抽出(sampling with replacement)**、
-> 同じ標本は一度しか選ばない方法を**非復元抽出(sampling without replacement)**といいます。
+> 複数回同じ標本を選ぶ抽出方法を **復元抽出(sampling with replacement)** 、
+> 同じ標本は一度しか選ばない方法を **非復元抽出(sampling without replacement)** といいます。
 
 ```python
 # 無作為抽出
