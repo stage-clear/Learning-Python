@@ -27,4 +27,9 @@ scores[:10]
 
 > ランダムに標本を抽出する方法を**無作為抽出（random sampling）**といいます
 
+> 複数回同じ標本を選ぶ抽出方法を**復元抽出(sampling with replacement)**、
+> 同じ標本は一度しか選ばない方法を**非復元抽出(sampling without replacement)**といいます。
+
+
+
 
