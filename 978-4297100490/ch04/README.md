@@ -30,6 +30,41 @@ scores[:10]
 > 複数回同じ標本を選ぶ抽出方法を**復元抽出(sampling with replacement)**、
 > 同じ標本は一度しか選ばない方法を**非復元抽出(sampling without replacement)**といいます。
 
+```python
+# 無作為抽出
+np.random.choice([1, 2, 3], 3)
 
 
+# 非復元抽出
+np.random.choice([1, 2, 3], 3, replace=False)
+```
 
+> 乱数のシードとは, これから発生させる乱数の元となる数字で, これを定めておくと毎回同じ乱数を得ることができます。
+
+```python
+np.random.seed(0)
+np.random.choice([1, 2, 3], 3)
+```
+
+```python
+np.random.seed(0)
+sample = np.random.choice(scores, 20)
+sample.mean()
+```
+
+```python
+scores.mean()
+```
+
+```python
+for i in range(5):
+    sample = np.random.choice(scores, 20)
+    print(f'{i+1}回目の無作為抽出で得た標本平均', sample.mean())
+```
+
+## 4.2 確率モデル
+
+> このような不確定さを伴った現象は**確率（probability）**を使って考えることができます。
+> 確率を使って無作為抽出やサイコロを数学的にモデル化したものを**確率モデル（probability model）**といいます
+
+### 4.2.1 確率の基本
