@@ -76,3 +76,64 @@ for i in range(5):
 
 > 「出目が１」や「出目が奇数」といった試行の結果起こりうる出来事を **事象（event）** といい、
 > 特に「出目が１」といったこれ以上細かく分解できない事象のことを **根元事象（elementary event）** といいます。
+
+> 「事象が互いに排反なら, それらのうち少なくとも１つが起こる事象は, 各事象の確率の和に等しい」
+> 事象が **互いに排反** とは, それぞれの事象が同時に起こりえないということです。
+
+### 4.2.2 確率分布
+
+**確率分布（probability distribution）** とは, 確率変数がどのような振る舞いをするかを表したものです.
+
+```python
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# いかさまサイコロ
+dice = [1, 2, 3, 4, 5, 6]
+prob = [1/21, 2/21, 3/21, 4/21, 5/21, 6/21]
+
+np.random.choice(dice, p=prob)
+
+num_trial = 100
+sample = np.random.choice(dice, num_trial, p=prob)
+sample
+
+freq, _ = np.histogram(sample, bins=6, range=(1, 7))
+pd.DataFrame({
+    '度数': freq,
+    '相対度数': freq / num_trial
+}, index=pd.Index(np.arange(1, 7), name='出目'))
+
+// グラフ
+fig = plt.figure(figsize=(10, 6))
+ax = fig.add_subplot(111)
+ax.hist(sample, bins=6, range=(1, 7), density=True, rwidth=0.8)
+# 真の確率分布を横線で表示
+ax.hlines(prob, np.arange(1, 7), np.arange(2, 8), colors='gray')
+# 棒グラフの [1.5, 2.5, ... 6.5]の場所に目盛りをつける
+ax.set_xticks(np.linspace(1.5, 6.5, 6))
+# 目盛りの値は [1,2,3,4,5,6]
+ax.set_xticklabels(np.arange(1, 7))
+ax.set_xlabel('出目')
+ax.set_ylabel('相対度数')
+plt.show()
+```
+
+```python
+num_trial = 100000
+sample = np.random.choice(dice, size=num_trial, p=prob)
+
+fig = plt.figure(figsize=(10, 6))
+ax = fig.add_subplot(111)
+ax.hist(sample, bins=6, range=(1, 7), density=True, rwidth=0.8)
+ax.hlines(prob, np.arange(1, 7), np.arange(2, 8), colors='gray')
+ax.set_xticks(np.linspace(1.5, 6.5, 6))
+ax.set_xticklabels(np.arange(1, 7))
+ax.set_xlabel('出目')
+ax.set_ylabel(''相対度数)
+plt.show()
+```
+
+## 4.3 推測統計における確率
+
