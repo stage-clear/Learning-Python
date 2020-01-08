@@ -113,7 +113,7 @@ ax.hist(sample, bins=6, range=(1, 7), density=True, rwidth=0.8)
 ax.hlines(prob, np.arange(1, 7), np.arange(2, 8), colors='gray')
 # 棒グラフの [1.5, 2.5, ... 6.5]の場所に目盛りをつける
 ax.set_xticks(np.linspace(1.5, 6.5, 6))
-# 目盛りの値は [1,2,3,4,5,6]
+# 目盛りの値は [1, 2, 3, 4, 5, 6]
 ax.set_xticklabels(np.arange(1, 7))
 ax.set_xlabel('出目')
 ax.set_ylabel('相対度数')
@@ -131,9 +131,56 @@ ax.hlines(prob, np.arange(1, 7), np.arange(2, 8), colors='gray')
 ax.set_xticks(np.linspace(1.5, 6.5, 6))
 ax.set_xticklabels(np.arange(1, 7))
 ax.set_xlabel('出目')
-ax.set_ylabel(''相対度数)
+ax.set_ylabel('相対度数')
 plt.show()
 ```
 
 ## 4.3 推測統計における確率
 
+```python
+fig = plt.figure(figsize=(10, 6))
+ax = fig.add_subplot(111)
+ax.hist(scores, bins=100, range=(0, 100), density=True)
+ax.set_xlim(20, 100)
+ax.set_ylim(0, 0.042)
+ax.set_xlabel('点数')
+ax.set_ylabel('相対度数')
+```
+
+> 無作為抽出においても標本のサンプルサイズを増やしていくと, 標本データの相対度数は実際の確率分布に近づいていきます.
+
+```python
+# サンプル数を増やす
+sample = np.random.choice(scores, 10000)
+
+fig = plt.figure(figsize=(10, 6))
+ax = fig.add_subplot(111)
+ax.hist(sample, bins=100, range=(0, 100), density=True)
+ax.set_xlim(20, 100)
+ax.set_ylim(0, 0.042)
+ax.set_xlabel('点数')
+ax.set_ylabel('相対度数')
+plot.show()
+```
+
+```python
+# サンプルサイズ20の標本を抽出して標本平均を計算する作業を1000回行う
+sample_means = [np.random.choice(scores, 20).mean() for _ in range(10000)]
+
+fig = plt.figure(figsize=(10, 6))
+ax = fig.add_subplot(111)
+ax.hist(sample_means, bins=100, range=(0, 100), density=True)
+# 母平均を縦線で表示
+ax.vlines(np.mean(scores), 0, 1, 'gray')
+ax.set_xlim(50, 90)
+ax.set_ylim(0, 0.13)
+ax.set_xlabel('点数')
+ax.set_ylabel('相対度数')
+plt.show()
+```
+
+## 4.4 これから学ぶこと
+
+> 推定とは母数を推定することを指し, １つの値で推定することを **点推定** , 区間で推定することを **区間推定** と呼びます.
+
+> 検定とは母集団の統計的性質について仮説をたてて, その仮説が正しいかどうかを判断する手法のことです
