@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 ### 5.1.1 １次元の離散型確率変数の定義
 #### 確率質量関数
 
-```mathmatica
+```mathematica
 P(X = xk) = pk (k = 1,2,...)
 
 f(x) = P(X = x)
