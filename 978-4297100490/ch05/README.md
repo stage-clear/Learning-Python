@@ -224,6 +224,98 @@ P(X=xi, Y=yi) = Pij (i = 1,2,...; j=1,2,...)
 #### 確率の性質
 確率は0以上で全確率が１でなければなりません
 
+```python
+x_set = np.arange(2, 13)
+y_set = np.arange(1, 7)
+```
+
+```python
+def f_XY (x, y):
+    if 1 <= y <= 6 and 1 <= x - y <= 6:
+        return y * (x - y) / 441
+    else:
+        return 0
+```
+
+```python
+XY = [x_set, y_set, f_XY]
+```
+
+```python
+prob = np.array([[f_XY(x_i, y_j) for y_j in y_set]
+                for x_i in x_set])
+
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111)
+c = ax.pcolor(prob)
+ax.set_xticks(np.arange(prob.shape[1]) + 0.5, minor=False)
+ax.set_yticks(np.arange(prob.shape[0]) + 0.5, minor=False)
+ax.set_xticklabels(np.arange(1, 7), minor=False)
+ax.set_yticklables(np.arange(2, 13), minor=False)
+# y軸を下が大きい数宇治になるように, 上下逆転させる
+ax.invert_yaxis()
+# x軸の目盛りをグラフ上側に表示
+ax.xaxis.tick_top()
+fig.colorbar(c, ax=ax)
+plt.show()
+```
+
+```python
+# 確率が必ず0以上になっているか
+np.all(prob >= 0) # True
+
+# 確率の総和は1になっているか
+np.sum(prob) # 1.000
+```
+
+#### 周辺確率分布
+
+```mathematica
+fx(x) = Σ fXY(x, yk)
+        k
+```
+
+> 同時確率関数 *fXY* から確率変数 *Y* の影響を取り除くと,
+> 確率変数 *X* の振る舞いを記述する確率変数 *X* の確率関数のみが残ると考えるとイメージしやすい
+
+> このようにして求められた *fX(x)* のことを *X* の **周辺確率分布（marginal probability distribution）**
+> または単に *X* の **周辺分布** といいます
+
+```python
+def f_X(x):
+    return np.sum([f_XY(x, y_k) for y_k in y_set])
+
+def f_Y(y):
+    return np.sum([f_XY(x_k, y) for x_k in x_set])
+
+X = [x_set, f_X]
+y = [y_set, f_Y]
+```
+
+```python
+prob_x = np.array([f_X(x_k) for x_k in x_set])
+prob_y = np.array([f_Y(y_k) for y_k in y_set])
+
+fig = plt.figure(figsize=(12, 4))
+ax1 = fig.add_subplot(121)
+ax2 = fig.add_subplot(122)
+
+ax1.bar(x_set, prob_x)
+ax1.set_title('Xの周辺分布')
+ax1.set_xlabel('Xのとりうる値')
+ax1.set_ylabel('確率')
+ax1.set_xticks(x_set)
+
+ax2.bar(y_set, prob_y)
+ax2.set_title('Yの周辺分布')
+ax2.set_xlabel('Yの取りうる値')
+ax2.set_ylabel('確率')
+
+plt.show()
+```
+
+### 5.2.2 ２次元の離散型確率
+
 
 
 
